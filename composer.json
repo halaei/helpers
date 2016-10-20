@@ -22,10 +22,5 @@
     "psr-4": {
       "Halaei\\Helpers\\": "src/"
     }
-  },
-  "autoload-dev": {
-    "psr-4": {
-      "HalaeiTests\\Helpers\\": "tests/"
-    }
   }
 }

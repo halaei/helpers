@@ -1,0 +1,57 @@
+<?php
+
+namespace HalaeiTests;
+
+use Halaei\Helpers\Eloquent\BatchUpdateServiceProvider;
+
+class BatchUpdateTest extends \PHPUnit_Framework_TestCase
+{
+    /**
+     * The Illuminate application instance.
+     *
+     * @var \Illuminate\Foundation\Application
+     */
+    protected $app;
+
+    public function setUp()
+    {
+        if (! $this->app) {
+            $this->createApplication();
+        }
+    }
+
+    /**
+     * Creates the application.
+     *
+     * Needs to be implemented by subclasses.
+     *
+     * @return \Symfony\Component\HttpKernel\HttpKernelInterface
+     */
+    public function createApplication()
+    {
+        $this->app = $this->getMockConsole(['addToParent']);
+        $command = \Mockery::mock(\Illuminate\Console\Command::class);
+        $command->shouldReceive('setLaravel')->once()->with(\Mockery::type(\Illuminate\Contracts\Foundation\Application::class));
+        $this->app->expects($this->once())->method('addToParent')->with($this->equalTo($command))->will($this->returnValue($command));
+        $result = $this->app->add($command);
+
+        $this->assertEquals($command, $result);
+    }
+
+    protected function getMockConsole(array $methods)
+    {
+        $app = \Mockery::mock(\Illuminate\Contracts\Foundation\Application::class, ['version' => '5.3']);
+        $events = \Mockery::mock(\Illuminate\Contracts\Events\Dispatcher::class, ['fire' => null]);
+
+        $console = $this->getMockBuilder(\Illuminate\Console\Application::class)->setMethods($methods)->setConstructorArgs([
+            $app, $events, 'test-version',
+        ])->getMock();
+
+        return $console;
+    }
+
+    public function testMacrosCanBeRegistered()
+    {
+        (new BatchUpdateServiceProvider($this->app))->register();
+    }
+}
