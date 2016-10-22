@@ -50,12 +50,10 @@ To enable this feature register `\Halaei\Helpers\Eloquent\BatchUpdateServiceProv
 
 ### Disabling blade @parent
 @parent feature of Laravel framework is implemented with a [minor security bug](https://github.com/laravel/framework/issues/10068).
-So you may need to disable the feature. If in your `config/app.php` file relplace
+So you may need to disable the feature. If in your `config/app.php` file relplace `\Illuminate\View\ViewServiceProvider::class` with `\Halaei\Helpers\View\ViewServiceProvider::class`.
 
-    \Illuminate\View\ViewServiceProvider::class
-by
-
-    \Halaei\Helpers\View\ViewServiceProvider::class
+### Cache::add() for RedisStore
+Concurrent calls to Cache::add() for RedisStore will be isolated if you replace `\Illuminate\Cache\CacheServiceProvider::class` with `\Halaei\Helpers\Cache\CacheServiceProvider::class`.
 
 ## License
 This package is open-sourced software licensed under the [MIT license](http://opensource.org/licenses/MIT)
