@@ -2,7 +2,7 @@
 
 namespace HalaeiTests;
 
-use Halaei\Helpers\Eloquent\BatchUpdateServiceProvider;
+use Halaei\Helpers\Eloquent\EloquentServiceProvider;
 
 class BatchUpdateTest extends \PHPUnit_Framework_TestCase
 {
@@ -52,6 +52,6 @@ class BatchUpdateTest extends \PHPUnit_Framework_TestCase
 
     public function testMacrosCanBeRegistered()
     {
-        (new BatchUpdateServiceProvider($this->app))->register();
+        (new EloquentServiceProvider($this->app))->register();
     }
 }

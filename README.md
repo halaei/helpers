@@ -10,7 +10,7 @@
 This is a personal package of small pieces of codes that I have needed in one specific project once, and they may be needed in other projects later on, too.
 So this is a way for me to stop copy and paste.
 
-### Eloquent Batch Update
+### Eloquent Batch Update & Insert Ignore
 Sometimes I face situations when it is important to update multiple rows of a table at once, and performance does matter,
 especially in terms of the number of queries.
 Here is an attempt to generally solve the problem using CASE WHEN THEN statements:
@@ -46,7 +46,7 @@ ELSE `observed_at` END
 WHERE id in (12, 13, 16)
 ```
 
-To enable this feature register `\Halaei\Helpers\Eloquent\BatchUpdateServiceProvider::class` in the list of providers in `config/app.php`.
+To enable batch update feature (+ insert ignore) register `\Halaei\Helpers\Eloquent\EloquentServiceProvider::class` in the list of providers in `config/app.php`.
 
 ### Disabling blade @parent
 @parent feature of Laravel framework is implemented with a [minor security bug](https://github.com/laravel/framework/issues/10068).
