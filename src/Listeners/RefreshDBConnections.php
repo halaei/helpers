@@ -4,7 +4,6 @@ namespace Halaei\Helpers\Listeners;
 
 use Exception;
 use Illuminate\Contracts\Debug\ExceptionHandler;
-use Illuminate\Queue\Events\JobProcessing;
 
 class RefreshDBConnections
 {
@@ -18,17 +17,20 @@ class RefreshDBConnections
         $this->exceptions = $exceptions;
     }
 
-    public function handle(JobProcessing $event)
+    public function handle()
     {
-        if ($event->connectionName != 'sync') {
-            try {
-                while (\DB::transactionLevel() > 0) {
-                    \DB::rollBack();
-                }
-            } catch (Exception $e) {
-                \DB::reconnect();
-                $this->exceptions->report($e);
+        try {
+            while (\DB::transactionLevel() > 0) {
+                \DB::rollBack();
             }
+        } catch (Exception $e) {
+            \DB::reconnect();
+            $this->exceptions->report($e);
         }
+    }
+
+    public static function boot()
+    {
+        \Queue::looping(static::class);
     }
 }

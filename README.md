@@ -57,13 +57,7 @@ Concurrent calls to Cache::add() for RedisStore will be isolated if you replace 
 
 ### Clean-up DB transactions between handling queued jobs
 In order to make sure there is nothing wrong with the default DB connection even after a messed-up handling of a queued job,
-add the following to `$listen` array in `EventServiceProvider` class:
-
-```php
-   Illuminate\Queue\Events\JobProcessing::class => [
-       Halaei\Helpers\Listeners\RefreshDBConnections::class,
-   ],
-```
+call `Halaei\Helpers\Listeners\RefreshDBConnections::boot()` in `AppServiceProvider::boot()` function:
 
 ## License
 This package is open-sourced software licensed under the [MIT license](http://opensource.org/licenses/MIT)
