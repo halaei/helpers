@@ -64,7 +64,7 @@ class RedisLockTest extends \PHPUnit_Framework_TestCase
         $this->lock->unlock('test');
 
         $this->assertGreaterThan(1000, $this->redis->connection()->pttl('test2'));
-        $this->assertLessThan(10001, $this->redis->connection()->pttl('test2'));
+        $this->assertLessThan(5001, $this->redis->connection()->pttl('test2'));
 
         $this->assertEquals(1, $this->redis->connection()->llen('test2'));
 
