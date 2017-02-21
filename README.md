@@ -85,5 +85,31 @@ $lock->unlock('critical_section', 0.1);
 In order to make sure there is nothing wrong with the default DB connection even after a messed-up handling of a queued job,
 call `Halaei\Helpers\Listeners\RefreshDBConnections::boot()` in `AppServiceProvider::boot()` function:
 
+
+### Number Encryption
+
+If you need to obfuscate auto-increment numbers into random-looking strings, use the `Numcrypt` class:
+
+```php
+use Halaei\Helpers\Crypt\NumCrypt;
+
+$crypt = new NumCrypt();
+echo $crypt->encrypt(36); // 53k7hx
+echo $crypt->decrypt('53k7hx'); // 36
+```
+
+The NumCrypt constructor accepts charset for the accepted characters in the output and a key for encryption (uxing XOR).
+By default the charset is `[a-z0-9]`, and the key is 308312529.
+
+**Note**: NumCrypt is not meant to be cryptographically secure.
+
+```php
+use Halaei\Helpers\Crypt\NumCrypt;
+
+$crypt = new NumCrypt('9876543210abcdef', 0 /*dont XOR*/);
+echo $crypt->encrypt(16, 0 /*no padding*/); // 89
+echo $crypt->decrypt('999989'); // 36
+```
+
 ## License
 This package is open-sourced software licensed under the [MIT license](http://opensource.org/licenses/MIT)
