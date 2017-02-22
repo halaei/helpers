@@ -45,7 +45,7 @@ class RedisLockTest extends \PHPUnit_Framework_TestCase
                 'host' => '127.0.0.1',
                 'port' => 6379,
                 'database' => 5,
-                'timeout' => 0.5,
+                'timeout' => 10.0,
             ],
         ]);
     }
