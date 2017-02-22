@@ -62,7 +62,7 @@ class NumCrypt
      */
     public function decrypt($code)
     {
-        $code = array_reverse(str_split(strtolower($code)));
+        $code = array_reverse(str_split($code));
         $base = strlen($this->charset);
         $num = 0;
         $pow = 1;

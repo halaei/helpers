@@ -13,7 +13,7 @@ class NumCryptTest extends PHPUnit_Framework_TestCase
         $this->assertSame('53k7hx', $crypt->encrypt(36));
 
         $this->assertSame('5w2mpa', $crypt->encrypt(123423423));
-        $this->assertSame(123423423, $crypt->decrypt('5W2MPA'));
+        $this->assertSame(123423423, $crypt->decrypt('05w2mpa'));
     }
 
     public function test_num_to_code_with_default_constructor()
