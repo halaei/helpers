@@ -104,13 +104,13 @@ class RedisLockTest extends \PHPUnit_Framework_TestCase
 
     private function child_under_stress()
     {
-        if ($this->lock->lock('test', 10)) {
+        if ($this->lock->lock('test', 100)) {
             usleep(rand(1, 1000));
             if ($this->redis->connection()->setnx('check_the_lock_is_exclusive', 1)) {
                 usleep(rand(1, 1000));
                 $this->redis->connection()->lpush('ok', ['true']);
                 $this->redis->connection()->del('check_the_lock_is_exclusive');
-                $this->lock->unlock('test', 10);
+                $this->lock->unlock('test');
                 die;
             }
         }
