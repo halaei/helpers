@@ -40,8 +40,9 @@ class BatchUpdateTest extends \PHPUnit_Framework_TestCase
 
     protected function getMockConsole(array $methods)
     {
-        $app = \Mockery::mock(\Illuminate\Contracts\Foundation\Application::class, ['version' => '5.3']);
+        $app = \Mockery::mock(\Illuminate\Contracts\Foundation\Application::class, ['version' => '5.4']);
         $events = \Mockery::mock(\Illuminate\Contracts\Events\Dispatcher::class, ['fire' => null]);
+        $events->shouldReceive('dispatch');
 
         $console = $this->getMockBuilder(\Illuminate\Console\Application::class)->setMethods($methods)->setConstructorArgs([
             $app, $events, 'test-version',

@@ -2,16 +2,16 @@
 
 namespace Halaei\Helpers\Redis;
 
-use Illuminate\Redis\Database;
+use Predis\ClientInterface;
 
 class Lock
 {
     /**
-     * @var Database
+     * @var ClientInterface
      */
     protected $redis;
 
-    public function __construct(Database $redis)
+    public function __construct(ClientInterface $redis)
     {
         $this->redis = $redis;
     }
@@ -35,12 +35,12 @@ if (redis.call('exists', KEYS[1]) == 0) then
 end
 return false
 LUA;
-        if ($this->redis->connection()->eval($LUA, 2, $name.'1', $name.'2', (int) ($tr * 1000))) {
+        if ($this->redis->eval($LUA, 2, $name.'1', $name.'2', (int) ($tr * 1000))) {
             return true;
         }
 
-        if ($this->redis->connection()->brpoplpush($name.'2', $name.'1', $tr)) {
-            $this->redis->connection()->expire($name.'1', $tr);
+        if ($this->redis->brpoplpush($name.'2', $name.'1', $tr)) {
+            $this->redis->expire($name.'1', $tr);
             return true;
         }
 
@@ -59,6 +59,6 @@ if (redis.call('rpoplpush', KEYS[1], KEYS[2])) then
     redis.call('expire', KEYS[2], 5)
 end
 LUA;
-        $this->redis->connection()->eval($LUA, 2, $name.'1', $name.'2');
+        $this->redis->eval($LUA, 2, $name.'1', $name.'2');
     }
 }
