@@ -20,9 +20,7 @@ class RefreshDBConnections
     public function handle()
     {
         try {
-            while (\DB::transactionLevel() > 0) {
-                \DB::rollBack();
-            }
+            \DB::rollBack(0);
         } catch (Exception $e) {
             \DB::reconnect();
             $this->exceptions->report($e);

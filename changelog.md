@@ -1,5 +1,9 @@
 # Change Log
 
+## v0.3.1
+
+- Use Laravel 5.4 new feature `DB::rollBack(0)` when refreshing database connection.
+
 ## v0.3.0
 
 - Let RedisLock directly work with predis instead of `illuminate/redis`.
