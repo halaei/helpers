@@ -19,7 +19,7 @@ class NumCryptTest extends PHPUnit_Framework_TestCase
     public function test_num_to_code_with_default_constructor()
     {
         $crypt = new NumCrypt();
-        for ($i = 0; $i < 1000000; $i++) {
+        for ($i = 0; $i < 100000; $i++) {
             $code = $crypt->encrypt($i);
             $this->assertRegExp('/^[0-9a-z]{6}$/', $code);
             $this->assertSame($i, $crypt->decrypt($code));
@@ -37,7 +37,7 @@ class NumCryptTest extends PHPUnit_Framework_TestCase
     public function test_num_to_code_with_custom_constructor()
     {
         $crypt = new NumCrypt('9876543210abcdef', 19);
-        for ($i = 1000000; $i < 1200000; $i++) {
+        for ($i = 100000; $i < 120000; $i++) {
             $code = $crypt->encrypt($i);
             $this->assertRegExp('/^[0-9a-f]{6}$/', $code);
             $this->assertSame($i, $crypt->decrypt($code));
