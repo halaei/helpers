@@ -40,10 +40,12 @@ class Supervisor
      * Run and monitor a command in a loop.
      *
      * @param Closure|string|object $command
-     * @param SupervisorOptions $options
+     * @param SupervisorOptions|null $options
      */
-    public function supervise($command, SupervisorOptions $options)
+    public function supervise($command, SupervisorOptions $options = null)
     {
+        $options = $options ? : new SupervisorOptions();
+
         $command = $this->resolveCommand($command);
 
         $state = new SupervisorState();

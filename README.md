@@ -10,6 +10,41 @@
 This is a personal package of small pieces of codes that I have needed in one specific project once, and they may be needed in other projects later on, too.
 So this is a way for me to stop copy and paste.
 
+### Supervisor
+Supervisor let you run a command in an loop and monitor it.
+
+- Supervisor prevents the command from consuming too much memory, getting frozen or taking too long.
+- Supervisor gracefully stops the loop of executing the given command if:
+    - `artisan queue:restart` command is issued,
+    - or soft memory limit is reached,
+    - or ttl is reached,
+    - or too many consecutive runs of the command where failed,
+    - or `SIGTERM` signal is received.
+- Supervisor pauses the loop when:
+    - `artisan down` command is issued,
+    - or`SIGUSR2` signal is received.
+
+```php
+use Halaei\Helpers\Supervisor\Supervisor;
+
+app(Supervisor::class)->supervise(GetTelegramUpdates::class);
+
+class GetTelegramUpdates
+{
+    function handle(Api $api)
+    {
+        $updates = $api->getUpdates(...);
+        $this->queueUpdates($updates);
+    }
+    function queueUpdates($updates)
+    {
+        ...
+    }
+}
+```
+
+To configure the behaviour of supervisor, you can pass an instance of `Halaei\Helpers\Supervisor\SupervisorOptions` as the second argument to the `supervise()` method.
+
 ### Eloquent Batch Update & Insert Ignore
 Sometimes I face situations when it is important to update multiple rows of a table at once, and performance does matter,
 especially in terms of the number of queries.
@@ -51,9 +86,6 @@ To enable batch update feature (+ insert ignore) register `\Halaei\Helpers\Eloqu
 ### Disabling blade @parent
 @parent feature of Laravel framework is implemented with a [minor security bug](https://github.com/laravel/framework/issues/10068).
 So you may need to disable the feature. If in your `config/app.php` file relplace `\Illuminate\View\ViewServiceProvider::class` with `\Halaei\Helpers\View\ViewServiceProvider::class`.
-
-### Cache::add() for RedisStore
-Concurrent calls to Cache::add() for RedisStore will be isolated if you replace `\Illuminate\Cache\CacheServiceProvider::class` with `\Halaei\Helpers\Cache\CacheServiceProvider::class`.
 
 ### Redis-Based mutual exclusive lock
 The `\Halaei\Helpers\Redis\Lock` class provides Redis-Based mutual exclusive locks with auto-release timer. The implementation is based on `rpoplpush` and `brpoplpush` Redis commands.
