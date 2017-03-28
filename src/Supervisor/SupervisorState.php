@@ -19,26 +19,7 @@ class SupervisorState
     public $shouldQuit = false;
 
     /**
-     * Number of consecutive failed runs.
-     *
-     * @var int
-     */
-    public $failed = 0;
-
-    /**
      * @var int|null
      */
     public $lastRestart;
-
-    /**
-     * The start time of supervisor loop.
-     *
-     * @var int
-     */
-    public $startedAt;
-
-    public function __construct()
-    {
-        $this->startedAt = time();
-    }
 }

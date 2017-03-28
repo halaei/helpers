@@ -5,7 +5,7 @@ namespace Halaei\Helpers\Supervisor\Events;
 use Halaei\Helpers\Supervisor\SupervisorOptions;
 use Halaei\Helpers\Supervisor\SupervisorState;
 
-class Looping
+abstract class Looping
 {
     /**
      * @var SupervisorOptions

@@ -15,14 +15,15 @@ Supervisor helps you with running a command in an loop and monitor it. The code 
 - Supervisor prevents the command from consuming too much memory, getting frozen or taking too long.
 - Supervisor gracefully stops the loop of executing the given command if:
     - `artisan queue:restart` command is issued,
-    - or soft memory limit is reached,
-    - or ttl is reached,
-    - or too many consecutive runs of the command where failed,
+    - or memory limit is reached,
     - or `SIGTERM` signal is received.
 - Supervisor pauses the loop when:
     - `artisan down` command is issued,
     - or`SIGUSR2` signal is received.
-
+- Supervisor is highly configuration via event listeners:
+    - If a listener to `LoopBeginning` event returns false, the supervisor pauses the loop.
+    - If a listener to `LoopCompleting` event returns false, the supervisor stops and terminates the process.
+    - Extra management and monitoring power is achievable by listening to `RunSucceed`, `RunFailed`, and `SupervisorStopping` events.
 ```php
 use Halaei\Helpers\Supervisor\Supervisor;
 

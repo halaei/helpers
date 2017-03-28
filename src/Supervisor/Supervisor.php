@@ -2,14 +2,18 @@
 
 namespace Halaei\Helpers\Supervisor;
 
-use Halaei\Helpers\Supervisor\Events\Looping;
-use Halaei\Helpers\Supervisor\Events\WorkerStopping;
+use Halaei\Helpers\Supervisor\Events\LoopCompleting;
+use Halaei\Helpers\Supervisor\Events\LoopBeginning;
+use Halaei\Helpers\Supervisor\Events\RunFailed;
+use Halaei\Helpers\Supervisor\Events\RunSucceed;
+use Halaei\Helpers\Supervisor\Events\SupervisorStopping;
 use Illuminate\Contracts\Bus\Dispatcher as Bus;
 use Illuminate\Contracts\Cache\Repository as Cache;
 use Illuminate\Contracts\Debug\ExceptionHandler;
 use Illuminate\Contracts\Events\Dispatcher as Events;
 use Illuminate\Contracts\Foundation\Application;
 use Closure;
+use Symfony\Component\Debug\Exception\FatalThrowableError;
 
 class Supervisor
 {
@@ -62,14 +66,13 @@ class Supervisor
      */
     public function supervise($command, SupervisorOptions $options = null)
     {
-        $options = $options ? : new SupervisorOptions();
-
         $command = $this->resolveCommand($command);
 
-        $state = new SupervisorState();
+        $options = $options ? : new SupervisorOptions();
+        /** @var SupervisorState $state */
+        $state = $this->laravel->make(SupervisorState::class);
 
         $this->listenForSignals($state);
-        $this->setMemoryLimit($options->maxMemory);
 
         $state->lastRestart = $this->getTimestampOfLastRestart();
 
@@ -80,12 +83,10 @@ class Supervisor
             // if it is we will just pause for a given amount of time and
             // make sure we do not need to kill this process off completely.
             if (! $this->shouldRun($options, $state)) {
-                $this->pause($options, $state);
-
-                continue;
+                $this->pause();
+            } else {
+                $this->run($command, $options, $state);
             }
-
-            $this->run($command, $state);
 
             // Finally, we will check to see if we have exceeded our memory limits or if
             // this process should restart based on other indications. If so, we'll stop
@@ -98,19 +99,20 @@ class Supervisor
      * Run the closure and handle exceptions.
      *
      * @param Closure $closure
+     * @param SupervisorOptions $options
      * @param SupervisorState $state
      */
-    protected function run(Closure $closure, SupervisorState $state)
+    protected function run(Closure $closure, SupervisorOptions $options, SupervisorState $state)
     {
         try {
             $closure();
-            $state->failed = 0;
+            $this->events->dispatch(new RunSucceed($options, $state));
         } catch (\Exception $e) {
-            $state->failed++;
             $this->exceptions->report($e);
+            $this->events->dispatch(new RunFailed($options, $state, $e));
         } catch (\Throwable $e) {
-            $state->failed++;
-            $this->exceptions->report($e);
+            $this->exceptions->report(new FatalThrowableError($e));
+            $this->events->dispatch(new RunFailed($options, $state, $e));
         }
     }
 
@@ -215,7 +217,7 @@ class Supervisor
     {
         return ! ((! $options->force && $this->laravel->isDownForMaintenance()) ||
             $state->paused ||
-            $this->events->until(new Looping($options, $state)) === false);
+            $this->events->until(new LoopBeginning($options, $state)) === false);
     }
 
     /**
@@ -227,18 +229,6 @@ class Supervisor
     protected function shouldRestart($lastRestart)
     {
         return $this->getTimestampOfLastRestart() != $lastRestart;
-    }
-
-    /**
-     * This sets the maximum amount of memory in bytes that is allowed to be allocated.
-     *
-     * @param null|int|float $maxMemory
-     */
-    protected function setMemoryLimit($maxMemory)
-    {
-        if ($maxMemory) {
-            ini_set('memory_limit', (int) $maxMemory * 1024 * 1024);
-        }
     }
 
     /**
@@ -254,32 +244,6 @@ class Supervisor
     }
 
     /**
-     * Determine if the ttl has been reached.
-     *
-     * @param SupervisorOptions $options
-     * @param SupervisorState $state
-     *
-     * @return bool
-     */
-    protected function ttlExceeded(SupervisorOptions $options, SupervisorState $state)
-    {
-        return $options->ttl > 0 && time() > $state->startedAt + $options->ttl;
-    }
-
-    /**
-     * Determine if too many consecutive failed attempts has happened.
-     *
-     * @param SupervisorOptions $options
-     * @param SupervisorState $state
-     *
-     * @return bool
-     */
-    private function failedExceeded(SupervisorOptions $options, SupervisorState $state)
-    {
-        return $options->tries > 0 && $options->tries < $state->failed;
-    }
-
-    /**
      * Stop the process if necessary.
      *
      * @param SupervisorOptions $options
@@ -287,26 +251,20 @@ class Supervisor
      */
     protected function stopIfNecessary(SupervisorOptions $options, SupervisorState $state)
     {
-        if ($state->shouldQuit || $this->ttlExceeded($options, $state) || $this->shouldRestart($state->lastRestart)) {
-            $this->stop();
-        } elseif ($this->memoryExceeded($options->memory)) {
+        if ($this->memoryExceeded($options->memory)) {
             $this->stop(12);
-        } elseif ($this->failedExceeded($options, $state)) {
-            $this->stop(1);
+        } elseif ($state->shouldQuit || $this->shouldRestart($state->lastRestart) ||
+            $this->events->until(new LoopCompleting($options, $state)) === false) {
+            $this->stop();
         }
     }
 
     /**
      * Pause the worker for the current loop.
-     *
-     * @param SupervisorOptions $options
-     * @param SupervisorState $state
      */
-    protected function pause(SupervisorOptions $options, SupervisorState $state)
+    protected function pause()
     {
         sleep(1);
-
-        $this->stopIfNecessary($options, $state);
     }
 
     /**
@@ -317,7 +275,7 @@ class Supervisor
      */
     protected function stop($status = 0)
     {
-        $this->events->dispatch(new WorkerStopping());
+        $this->events->dispatch(new SupervisorStopping($status));
 
         exit($status);
     }

@@ -2,6 +2,6 @@
 
 namespace Halaei\Helpers\Supervisor\Events;
 
-class WorkerStopping
+class LoopCompleting extends Looping
 {
 }
