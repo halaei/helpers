@@ -2,36 +2,54 @@
 
 namespace Halaei\Helpers\Supervisor;
 
-use Illuminate\Contracts\Cache\Repository as CacheContract;
+use Halaei\Helpers\Supervisor\Events\Looping;
+use Halaei\Helpers\Supervisor\Events\WorkerStopping;
+use Illuminate\Contracts\Bus\Dispatcher as Bus;
+use Illuminate\Contracts\Cache\Repository as Cache;
 use Illuminate\Contracts\Debug\ExceptionHandler;
-use Illuminate\Events\Dispatcher;
+use Illuminate\Contracts\Events\Dispatcher as Events;
+use Illuminate\Contracts\Foundation\Application;
 use Closure;
 
 class Supervisor
 {
     /**
-     * @var CacheContract
+     * @var Application
+     */
+    protected $laravel;
+
+    /**
+     * @var Cache
      */
     protected $cache;
 
     /**
-     * @var Dispatcher
+     * @var Bus
+     */
+    protected $bus;
+
+    /**
+     * @var Events
      */
     protected $events;
 
     /**
      * @var ExceptionHandler
      */
-    private $exceptions;
+    protected $exceptions;
 
     /**
-     * @param CacheContract $cache
-     * @param Dispatcher $events
+     * @param Application $laravel
+     * @param Cache $cache
+     * @param Bus $bus
+     * @param Events $events
      * @param ExceptionHandler $exceptions
      */
-    public function __construct(CacheContract $cache, Dispatcher $events, ExceptionHandler $exceptions)
+    public function __construct(Application $laravel, Cache $cache, Bus $bus, Events $events, ExceptionHandler $exceptions)
     {
+        $this->laravel = $laravel;
         $this->cache = $cache;
+        $this->bus = $bus;
         $this->events = $events;
         $this->exceptions = $exceptions;
     }
@@ -61,7 +79,7 @@ class Supervisor
             // Before running any command, we will make sure this supervisor is not paused and
             // if it is we will just pause for a given amount of time and
             // make sure we do not need to kill this process off completely.
-            if (!$this->shouldRun($options, $state)) {
+            if (! $this->shouldRun($options, $state)) {
                 $this->pause($options, $state);
 
                 continue;
@@ -110,11 +128,11 @@ class Supervisor
         }
 
         if (is_string($command)) {
-            $command = app($command);
+            $command = $this->laravel->make($command);
         }
 
         return function () use ($command) {
-            dispatch($command);
+            $this->bus->dispatch($command);
         };
     }
 
@@ -195,9 +213,9 @@ class Supervisor
      */
     protected function shouldRun(SupervisorOptions $options, SupervisorState $state)
     {
-        return ! ((! $options->force && app()->isDownForMaintenance()) ||
+        return ! ((! $options->force && $this->laravel->isDownForMaintenance()) ||
             $state->paused ||
-            $this->events->until(new Events\Looping) === false);
+            $this->events->until(new Looping($options, $state)) === false);
     }
 
     /**
@@ -299,7 +317,7 @@ class Supervisor
      */
     protected function stop($status = 0)
     {
-        $this->events->fire(new Events\WorkerStopping);
+        $this->events->dispatch(new WorkerStopping());
 
         exit($status);
     }
