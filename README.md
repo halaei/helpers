@@ -11,7 +11,8 @@ This is a personal package of small pieces of codes that I have needed in one sp
 So this is a way for me to stop copy and paste.
 
 ### Supervisor
-Supervisor helps you with running a command in an loop and monitor it. The code is heavily based on the laravel daemon queue implementation.
+Supervisor helps you with running a command in an loop and while enabling you to monitor and control the loop.
+Supervisor is a generalization of the laravel daemon queue implementation.
 - Supervisor prevents the command from consuming too much memory, getting frozen or taking too long.
 - Supervisor gracefully stops the loop of executing the given command if:
     - `artisan queue:restart` command is issued,
