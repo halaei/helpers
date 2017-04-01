@@ -1,5 +1,9 @@
 # Change Log
 
+## v0.3.3
+
+- New feature: Supervisor
+
 ## v0.3.2
 
 - New class `SqlState` to detect the cause of common database errors based on their SQLSTATE.
