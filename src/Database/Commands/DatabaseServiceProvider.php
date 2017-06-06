@@ -10,7 +10,7 @@ class DatabaseServiceProvider extends ServiceProvider
     {
         $this->commands([
             BackupDatabaseCommand::class,
-            RecoverDatabaseCommand::class,
+            RestoreDatabaseCommand::class,
         ]);
     }
 }

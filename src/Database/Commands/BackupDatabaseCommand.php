@@ -23,27 +23,60 @@ class BackupDatabaseCommand extends Command
     protected $description = 'Backup the database';
 
     /**
+     * The timestamp of executing the command.
+     *
+     * @var Carbon
+     */
+    protected $timestamp;
+
+    /**
      * Execute the console command.
      *
      * @return mixed
      */
     public function handle()
     {
+        $this->timestamp = Carbon::now();
+
         $config = config('database.connections.'.$this->option('connection'));
         if (! is_array($config)) {
             throw new \InvalidArgumentException('connection not found');
         }
         if ($config['driver'] == 'mysql') {
-            return $this->backupMySql($config);
+            return $this->runBackup($this->getMySqlBackup($config), 'sql');
+        } elseif ($config['driver' == 'mongodb']) {
+            return $this->runBackup($this->getMongoBackup($config), 'bson');
         }
         throw new \InvalidArgumentException('driver not supported');
     }
 
-    private function backupMySql(array $config)
+    protected function runBackup(Process $process, $extension)
     {
-        $backupPath = $this->getBackupPath();
+        $backupPath = $this->getBackupPath($extension);
         $logPath = $this->errorLogPath();
-        $process = new Process([
+
+        $status = $process->run(function ($type, $line) {
+            echo $type.': '.$line;
+        });
+        if ($status) {
+            $this->error("Backup script has terminated with status: $status.\nSee $logPath for more information.");
+        } else {
+            $this->info("Backup script has successfully generated the backup file:\n$backupPath");
+        }
+    }
+
+    protected function getMongoBackup(array $config)
+    {
+        return new Process([
+            __DIR__.'/scripts/mongodump',
+        ]);
+    }
+
+    protected function getMySqlBackup(array $config)
+    {
+        $backupPath = $this->getBackupPath('sql');
+        $logPath = $this->errorLogPath();
+        return new Process([
             __DIR__.'/scripts/mysqldump',
             '--default-character-set', $config['charset'],
             '--host', $config['host'],
@@ -54,23 +87,16 @@ class BackupDatabaseCommand extends Command
             '--log-error', $logPath,
             $config['database']
         ], null, null, null, null, null);
-
-        $status = $process->run(function ($type, $line) {
-            echo $type.': '.$line;
-        });
-        if ($status) {
-            $this->error("mysqldump has terminated with status: $status.\nSee $logPath for more information.");
-        } else {
-            $this->info("mysqldump has successfully generated the backup file:\n$backupPath");
-        }
     }
 
-    private function getBackupPath()
+    protected function getBackupPath($extension)
     {
-        return storage_path('backup/'.$this->option('connection').'-'.Carbon::now()->format('Y-m-d-His').'.sql');
+        return storage_path(
+            'backup/'.$this->option('connection').'-'.$this->timestamp->format('Y-m-d-His').'.'.$extension
+        );
     }
 
-    private function errorLogPath()
+    protected function errorLogPath()
     {
         return storage_path('backup/'.$this->option('connection').'-error-log.txt');
     }

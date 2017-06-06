@@ -5,14 +5,14 @@ namespace Halaei\Helpers\Database\Commands;
 use Illuminate\Console\Command;
 use Symfony\Component\Process\Process;
 
-class RecoverDatabaseCommand extends Command
+class RestoreDatabaseCommand extends Command
 {
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'db:recover {--connection=mysql} {--drop=false} {file}';
+    protected $signature = 'db:restore {--connection=mysql} {--drop=false} {file}';
 
     /**
      * The console command description.
@@ -33,14 +33,28 @@ class RecoverDatabaseCommand extends Command
             throw new \InvalidArgumentException('connection not found');
         }
         if ($config['driver'] == 'mysql') {
-            return $this->recoverMySql($config);
+            return $this->runRestore($this->getMySqlRestore($config));
+        } elseif ($config['driver' == 'mongodb']) {
+            return $this->runRestore($this->getMongoRestore($config));
         }
         throw new \InvalidArgumentException('driver not supported');
     }
 
-    private function recoverMySql(array $config)
+    protected function runRestore(Process $process)
     {
-        $process = new Process([
+        $status = $process->run(function ($type, $line) {
+            echo $type.': '.$line;
+        });
+        if ($status) {
+            $this->error("Restore script has terminated with status: $status.");
+        } else {
+            $this->info("Restore script has successfully restored the database.");
+        }
+    }
+
+    protected function getMySqlRestore(array $config)
+    {
+        return new Process([
             __DIR__.'/scripts/mysqlimport',
             '--default-character-set', $config['charset'],
             '--host', $config['host'],
@@ -49,18 +63,16 @@ class RecoverDatabaseCommand extends Command
             '--password='.$config['password'], // todo: escape especial characters
             '--database', $config['database'],
         ], null, null, $this->getBackupFile());
-
-        $status = $process->run(function ($type, $line) {
-            echo $type.': '.$line;
-        });
-        if ($status) {
-            $this->error('mysql has terminated with status: '.$status);
-        } else {
-            $this->info('mysql has successfully ended');
-        }
     }
 
-    private function getBackupFile()
+    protected function getMongoRestore(array $config)
+    {
+        return new Process([
+            __DIR__.'/scripts/mongolimport',
+        ], null, null, $this->getBackupFile());
+    }
+
+    protected function getBackupFile()
     {
         return fopen(storage_path('backup/'.$this->argument('file')), 'r');
     }
