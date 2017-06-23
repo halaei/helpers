@@ -8,5 +8,6 @@ return [
     '405' => 'Method not allowed.',
     '422' => 'The input is invalid.',
     '429' => 'Too Many Attempts.',
-    '500' => 'Internal server error.'
+    '500' => 'Internal server error.',
+    '503' => 'Application is now in maintenance mode.',
 ];
