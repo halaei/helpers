@@ -1,8 +1,0 @@
-#!/usr/bin/env bash
-
-mysql \
-    --default-character-set=utf8mb4 \
-    --database=auth2 \
-    "$@"
-
-# --host=localhost --port=port_num --user=user_name --password=password
