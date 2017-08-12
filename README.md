@@ -46,6 +46,17 @@ class GetTelegramUpdates
 
 To configure the behaviour of supervisor, you can pass an instance of `Halaei\Helpers\Supervisor\SupervisorOptions` as the second argument to the `supervise()` method.
 
+### Eloquent Cache
+The `EloquentCache` class is a key-value repository for your eloquent models with caching features.
+If you want to cache your models using this repository, you may optionally let your model implement the `Cacheable` interface.
+The implementation of `Cacheable` is also available via `CacheableTrait`.
+Features include:
+1. Caching find by id queries via `EloquentCache::find()` method.
+2. Caching find by secondary key queries via `EloquentCache::findBySecondaryKey()` method.
+3. Invalidating the cache for a specific model via `EloquentCache::invalidateCache`, so that other processes don't use cache for that model.
+4. Cleaning the cache when updating and deleting the model via `EloquentCache::update()` and `EloquentCache::delete()` methods.
+
+
 ### Eloquent Batch Update & Insert Ignore
 When performance does matter, it is important to update multiple rows of a table at once using a single `update` query.
 To do so, use the `Collection::update` macro:
