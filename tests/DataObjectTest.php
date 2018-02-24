@@ -11,10 +11,7 @@ class DataObjectTest extends \PHPUnit_Framework_TestCase
         $input = [
             'id' => 1,
             'name' => 'Hamid Alaei V.',
-            'mobile' => [
-                'code' => '+98',
-                'number' => '9131231212',
-            ],
+            'mobile' => '+98-9131231212',
             'orders' => [
                 [
                     'id' => 11,
@@ -38,12 +35,13 @@ class DataObjectTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(1, $user->id);
         $this->assertNull($user->password);
         $this->assertInstanceOf(Mobile::class, $user->mobile);
+        $this->assertEquals(new Mobile(['code' => '+98', 'number' => '9131231212']), $user->getMobile());
         $this->assertCount(2, $user->orders);
         $this->assertInstanceOf(Order::class, $user->orders[0]);
         $this->assertInstanceOf(Item::class, $user->orders[0]->items[0]);
         $this->assertEquals('#124', $user->orders[0]->items[1]->code);
         $this->assertNull($user->orders[1]->items);
-        $this->assertEquals($input, $user->toArray());
+        $this->assertEquals($input, $user->toRaw());
     }
 
     public function test_matrix()
@@ -67,10 +65,13 @@ class DataObjectTest extends \PHPUnit_Framework_TestCase
  */
 class User extends DataObject
 {
-    protected static $relations = [
-        'mobile' => Mobile::class,
-        'orders' => Order::class.'[]',
-    ];
+    public static function relations()
+    {
+        return [
+            'mobile' => [Mobile::class, 'decode'],
+            'orders' => [Order::class],
+        ];
+    }
 }
 
 /**
@@ -79,6 +80,17 @@ class User extends DataObject
  */
 class Mobile extends DataObject
 {
+    public static function decode($str)
+    {
+        if (preg_match('/^\+(\d+)-(\d+)$/', $str, $parts)) {
+            return new self(['code' => $parts[1], 'number' => $parts[2]]);
+        }
+    }
+
+    public function toRaw()
+    {
+        return '+'.$this->code.'-'.$this->number;
+    }
 }
 
 /**
@@ -87,9 +99,12 @@ class Mobile extends DataObject
  */
 class Order extends DataObject
 {
-    protected static $relations = [
-        'items' => Item::class.'[]',
-    ];
+    public static function relations()
+    {
+        return [
+            'items' => [Item::class],
+        ];
+    }
 }
 
 /**
@@ -105,7 +120,10 @@ class Item extends DataObject
  */
 class Matrix extends DataObject
 {
-    protected static $relations = ['cells' => Cell::class.'[][]'];
+    public static function relations()
+    {
+        return ['cells' => [[Cell::class]]];
+    }
 }
 
 /**
