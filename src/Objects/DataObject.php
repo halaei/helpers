@@ -51,40 +51,9 @@ abstract class DataObject implements Arrayable, Jsonable, Rawable
     {
         foreach (static::relations() as $property => $type) {
             if (array_key_exists($property, $this->data)) {
-                $this->data[$property] = $this->makeRelated($property, $this->data[$property], $type);
+                $this->data[$property] = Casting::cast($this->data[$property], $type, $property);
             }
         }
-    }
-
-    /**
-     * Convert the related property value into the given type.
-     *
-     * @param string $property
-     * @param mixed $value
-     * @param string|callable|array $type
-     *
-     * @return DataCollection|mixed
-     */
-    protected function makeRelated($property, $value, $type)
-    {
-        // Recursive array case:
-        if (is_array($type) && count($type) == 1 && isset($type[0])) {
-            return new DataCollection(array_map(function ($value) use ($property, $type) {
-                return $this->makeRelated($property, $value, $type[0]);
-            }, $value));
-        }
-
-        // Constructor case:
-        if (is_string($type) && class_exists($type)) {
-            return new $type($value);
-        }
-
-        // Callable case:
-        if (is_callable($type)) {
-            return $type($value);
-        }
-
-        throw new \LogicException("Cannot parse relation $property in ".static::class);
     }
 
     /*
@@ -165,9 +134,11 @@ abstract class DataObject implements Arrayable, Jsonable, Rawable
         $action = substr($method, 0, 3);
 
         if ($action === 'get') {
-            $response = $this->__get(snake_case(substr($method, 3)));
+            return $this->__get(snake_case(substr($method, 3)));
+        }
 
-            return $response;
+        if ($action === 'set' && count($parameters) == 1) {
+            return $this->__set(snake_case(substr($method, 3)), $parameters[0]);
         }
 
         throw new \BadMethodCallException("Method {$method} does not exist.");
@@ -187,5 +158,26 @@ abstract class DataObject implements Arrayable, Jsonable, Rawable
         }
 
         return null;
+    }
+
+    /**
+     * Dynamically set object properties.
+     *
+     * @param string $key
+     * @param mixed $value
+     */
+    public function __set($key, $value)
+    {
+        $this->data[$key] = $value;
+    }
+
+    /**
+     * Dynamically unset object properties.
+     *
+     * @param string $key
+     */
+    public function __unset($key)
+    {
+        unset($this->data[$key]);
     }
 }
