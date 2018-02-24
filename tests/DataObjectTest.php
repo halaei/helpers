@@ -42,6 +42,10 @@ class DataObjectTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals('#124', $user->orders[0]->items[1]->code);
         $this->assertNull($user->orders[1]->items);
         $this->assertEquals($input, $user->toRaw());
+        $user->mobile->number = '9130000000';
+        $this->assertEquals('9130000000', $user->mobile->number);
+        $user->getMobile()->setCode('+99');
+        $this->assertEquals('+99', $user->mobile->code);
     }
 
     public function test_matrix()

@@ -1,5 +1,9 @@
 # Change Log
 
+#v0.4.2
+
+- New feature: DataObject.
+
 #v0.4.1
 
 - New feature: Eloquent Cache.

@@ -46,6 +46,95 @@ class GetTelegramUpdates
 
 To configure the behaviour of supervisor, you can pass an instance of `Halaei\Helpers\Supervisor\SupervisorOptions` as the second argument to the `supervise()` method.
 
+### Data Object
+An instance of `DataObject` is an object-oriented representation of a key-value array.
+The constructor of a data object accepts a key-value array and convert its items into types that are defined in the class `relations()` method.
+Magic methods are defined to make properties of a data-object accessible via
+
+* `$object->some_property` properties,
+* `$object->getSomeProperty()` getter methods,
+* and `$object->setSomeProperty('new value')` setter methods.
+
+Data objects are Arrayable, Jsonable, and Rawable, having `toArray()`, `toJson()` and `toRaw()` methods.
+
+```php
+use Halaei\Helpers\Objects\DataObject;
+
+class Order extends DataObject
+{
+    public static function relations()
+    {
+        return [
+            'items' => [Item::class], // items is a collection of objects of type Item.
+            'destination' => Location::class, //delivered_to is an object of type Location
+            'customer_mobile' => [Mobile::class, 'decode'], // customer mobile is an string that can be casted to a Mobile object via 'decode' static function.
+        ];
+    }
+}
+
+/**
+ * @property string $item_code
+ * @property int $quantity
+ * @property float $unit_price
+ * @property float $total_price
+ */
+class Item extends DataObject
+{
+}
+
+/**
+ * @property float $lat
+ * @property float $lon
+ */
+class Location extends DataObject
+{
+}
+
+class Mobile extends DataObject
+{
+    public static function decode($str)
+    {
+        if (preg_match('/^\+(\d+)-(\d+)$/', $str, $parts)) {
+            return new self(['code' => $parts[1], 'number' => $parts[2]]);
+        }
+    }
+
+    public function toRaw()
+    {
+        return '+'.$this->code.'-'.$this->number;
+    }
+}
+
+$array = [
+    'id' => 1234,
+    'items' => [
+        [
+            'item_code' => '#100',
+            'quantity' => 5,
+            'unit_price' => 24,
+            'total_price' => 120,
+        ],
+        [
+            'item_code' => '#200',
+            'quantity' => 1,
+            'unit_price' => 80,
+            'total_price' => 80,
+        ],
+    ],
+    'final_price' => 200,
+    'delivered_to' => [
+        'lat' => 37.74123543,
+        'lon' => 49.43254355,
+    ],
+    'customer_mobile' => '+98-9131231212',
+];
+$order = new Order($array);
+echo get_class($order->delivered_to); // Location
+echo $order->items[0]->quantity;// 5
+var_dump($order->toArray()['mobile_number']); // ['code' => '+98', 'number' => '9131231212']
+var_dump($order->toRaw()['mobile_number']); // +98-9131231212
+```
+
 ### Eloquent Cache
 The `EloquentCache` class is a key-value repository for your eloquent models with caching features.
 If you want to cache your models using this repository, you may optionally let your model implement the `Cacheable` interface.
