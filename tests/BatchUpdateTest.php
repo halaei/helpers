@@ -29,7 +29,7 @@ class BatchUpdateTest extends \PHPUnit_Framework_TestCase
      */
     public function createApplication()
     {
-        $this->app = $this->getMockConsole(['addToParent']);
+        $this->app = $this->getMockConsole(['addToParent', 'version']);
         $command = \Mockery::mock(\Illuminate\Console\Command::class);
         $command->shouldReceive('setLaravel')->once()->with(\Mockery::type(\Illuminate\Contracts\Foundation\Application::class));
         $this->app->expects($this->once())->method('addToParent')->with($this->equalTo($command))->will($this->returnValue($command));
@@ -40,7 +40,7 @@ class BatchUpdateTest extends \PHPUnit_Framework_TestCase
 
     protected function getMockConsole(array $methods)
     {
-        $app = \Mockery::mock(\Illuminate\Contracts\Foundation\Application::class, ['version' => '5.4']);
+        $app = \Mockery::mock(\Illuminate\Contracts\Foundation\Application::class, ['version' => '5.4.0']);
         $events = \Mockery::mock(\Illuminate\Contracts\Events\Dispatcher::class, ['fire' => null]);
         $events->shouldReceive('dispatch');
 
@@ -53,6 +53,7 @@ class BatchUpdateTest extends \PHPUnit_Framework_TestCase
 
     public function testMacrosCanBeRegistered()
     {
+        $this->app->expects($this->once())->method('version')->will($this->returnValue('5.4.0'));
         (new EloquentServiceProvider($this->app))->register();
     }
 }
