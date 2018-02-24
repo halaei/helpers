@@ -5,7 +5,7 @@ namespace Halaei\Helpers\Objects;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Contracts\Support\Jsonable;
 
-class DataObject implements Arrayable, Jsonable, Rawable
+abstract class DataObject implements Arrayable, Jsonable, Rawable
 {
     /**
      * The original data.
