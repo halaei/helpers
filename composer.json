@@ -14,9 +14,9 @@
   },
   "require-dev": {
     "predis/predis": "~1.0",
-    "illuminate/console": "5.4.*",
-    "illuminate/cache": "5.4.*",
-    "illuminate/database": "5.4.*",
+    "illuminate/console": "5.*",
+    "illuminate/cache": "5.*",
+    "illuminate/database": "5.*",
     "mockery/mockery": "0.9.*",
     "phpunit/phpunit": "~5.0",
     "symfony/process": "^3.3"
