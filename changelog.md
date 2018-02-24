@@ -1,5 +1,13 @@
 # Change Log
 
+#v0.4.1
+
+- New feature: Eloquent Cache.
+
+#v0.4.0
+
+- Make batchUpdate() compatible with Laravel 5.3+
+
 ## v0.3.3
 
 - New feature: Supervisor
