@@ -2,6 +2,7 @@
 
 namespace HalaeiTests;
 
+use Halaei\Helpers\Objects\DataCollection;
 use Halaei\Helpers\Objects\DataObject;
 
 class DataObjectTest extends \PHPUnit_Framework_TestCase
@@ -57,6 +58,84 @@ class DataObjectTest extends \PHPUnit_Framework_TestCase
         $matrix = new Matrix(['cells' => $input]);
         $this->assertInstanceOf(Cell::class, $matrix->cells[0][0]);
         $this->assertEquals(['cells' => $input], $matrix->toArray());
+    }
+
+    public function test_fuse_users()
+    {
+        $user1 = new User([
+            'id' => 1,
+            'name' => 'Hamid',
+            'mobile' => '+98-9131111111',
+            'orders' => [],
+        ]);
+        $user2 = new User([
+            'id' => 1,
+            'name' => 'Hamid Alaei',
+            'mobile' => '+98-9131231212',
+            'orders' => null,
+        ]);
+        $this->assertSame($user1->fuse($user2, ['orders'])->toRaw(), [
+            'id' => 1,
+            'name' => 'Hamid Alaei',
+            'mobile' => '+98-9131231212',
+            'orders' => [],
+        ]);
+    }
+
+    public function test_fuse_collections_of_users()
+    {
+        $users1 = new DataCollection([
+            new User([
+                'id' => 1,
+                'name' => 'Foo',
+                'orders' => [['id' => 1]],
+            ]),
+            new User([
+                'id' => 2,
+                'name' => 'Bar',
+                'orders' => [['id' => 2]],
+            ]),
+            new User([
+                'id' => 3,
+                'name' => 'Baz',
+                'orders' => [['id' => 3]],
+            ]),
+        ]);
+        $users2 = new DataCollection([
+            new User([
+                'id' => 1,
+                'name' => 'Foobar',
+                'orders' => [['id' => 4]],
+            ]),
+            new User([
+                'id' => 4,
+                'name' => 'FooBarBaz',
+                'orders' => null,
+            ]),
+        ]);
+        $fused = $users1->fuse($users2, 'id', ['orders']);
+        $this->assertSame([
+            [
+                'id' => 1,
+                'name' => 'Foobar',
+                'orders' => [['id' => 1]],
+            ],
+            [
+                'id' => 2,
+                'name' => 'Bar',
+                'orders' => [['id' => 2]],
+            ],
+            [
+                'id' => 3,
+                'name' => 'Baz',
+                'orders' => [['id' => 3]],
+            ],
+            [
+                'id' => 4,
+                'name' => 'FooBarBaz',
+                'orders' => null,
+            ]
+        ], $fused->toArray());
     }
 }
 

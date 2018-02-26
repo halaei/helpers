@@ -21,4 +21,29 @@ class DataCollection extends Collection implements Rawable
             return $value instanceof Arrayable ? $value->toArray() : $value;
         }, $this->items);
     }
+
+    /**
+     * Fuse this collection with the given collection, by adding items that are new and fusing items with duplicate key.
+     *
+     * @param DataCollection $collection
+     * @param callable|string $keyBy
+     * @param array $except
+     *
+     * @return static
+     */
+    public function fuse(DataCollection $collection, $keyBy, array $except = [])
+    {
+        $dictionary = $this->keyBy($keyBy);
+
+        foreach ($collection as $item) {
+            $key = $this->valueRetriever($keyBy)($item);
+            if ($dictionary->has($key)) {
+                $dictionary[$key]->fuse($item, $except);
+            } else {
+                $dictionary[$key] = $item;
+            }
+        }
+
+        return $dictionary->values();
+    }
 }

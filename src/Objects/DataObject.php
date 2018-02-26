@@ -50,7 +50,7 @@ abstract class DataObject implements Arrayable, Jsonable, Rawable
     protected function mapRelations()
     {
         foreach (static::relations() as $property => $type) {
-            if (array_key_exists($property, $this->data)) {
+            if (array_key_exists($property, $this->data) && ! is_null($this->data[$property])) {
                 $this->data[$property] = Casting::cast($this->data[$property], $type, $property);
             }
         }
@@ -118,6 +118,29 @@ abstract class DataObject implements Arrayable, Jsonable, Rawable
     }
 
     /*
+     * Operations
+     */
+
+    /**
+     * Fuse this object with a given object, by copying the properties.
+     *
+     * @param DataObject $object
+     * @param array $except
+     *
+     * @return $this
+     */
+    public function fuse(DataObject $object, array $except = [])
+    {
+        foreach ($object->data as $prop => $val) {
+            if (! in_array($prop, $except)) {
+                $this->data[$prop] = $val;
+            }
+        }
+
+        return $this;
+    }
+
+    /*
      * Magic Methods
      */
 
@@ -169,6 +192,17 @@ abstract class DataObject implements Arrayable, Jsonable, Rawable
     public function __set($key, $value)
     {
         $this->data[$key] = $value;
+    }
+
+    /**
+     * Determine if a property exists on the object.
+     *
+     * @param  string  $key
+     * @return bool
+     */
+    public function __isset($key)
+    {
+        return ! is_null($this->__get($key));
     }
 
     /**
