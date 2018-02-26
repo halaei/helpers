@@ -36,7 +36,8 @@ class DataCollection extends Collection implements Rawable
         $dictionary = $this->keyBy($keyBy);
 
         foreach ($collection as $item) {
-            $key = $this->valueRetriever($keyBy)($item);
+            $valueRetriever = $this->valueRetriever($keyBy);
+            $key = $valueRetriever($item);
             if ($dictionary->has($key)) {
                 $dictionary[$key]->fuse($item, $except);
             } else {
