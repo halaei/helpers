@@ -211,7 +211,11 @@ $lock->unlock('critical_section', 0.1);
 
 ### Clean-up DB transactions between handling queued jobs
 In order to make sure there is nothing wrong with the default DB connection even after a messed-up handling of a queued job,
-call `Halaei\Helpers\Listeners\RefreshDBConnections::boot()` in `AppServiceProvider::boot()` function:
+call `Halaei\Helpers\Listeners\RefreshDBConnections::boot()` in `AppServiceProvider::boot()` function.
+
+### Safely terminate long-running workers
+Long-running workers may cause unexpected issues if you are not 100% careful.
+To safely terminate long-running workers call `Halaei\Helpers\Listeners\RandomWorkerTerminator::boot()` in `AppServiceProvider::boot()`.
 
 ### Disabling blade @parent
 @parent feature of Laravel framework is implemented with a [minor security bug](https://github.com/laravel/framework/issues/10068).
