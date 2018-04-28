@@ -170,7 +170,8 @@ class Supervisor
     protected function supportsAsyncSignals()
     {
         return version_compare(PHP_VERSION, '7.1.0') >= 0 &&
-            extension_loaded('pcntl');
+            extension_loaded('pcntl') &&
+            function_exists('pcntl_async_signals');
     }
 
     /**
