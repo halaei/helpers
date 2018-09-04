@@ -23,24 +23,46 @@ class DataCollection extends Collection implements Rawable
     }
 
     /**
-     * Fuse this collection with the given collection, by adding items that are new and fusing items with duplicate key.
+     * Fuse this collection with the given items, by adding items that are new and fusing items with duplicate key.
      *
-     * @param DataCollection $collection
+     * @param DataCollection $items
      * @param callable|string $keyBy
      * @param array $except
      *
      * @return static
      */
-    public function fuse(DataCollection $collection, $keyBy, array $except = [])
+    public function fuse(DataCollection $items, $keyBy, array $except = [])
     {
         $dictionary = $this->keyBy($keyBy);
 
-        foreach ($collection as $item) {
+        foreach ($items as $item) {
             $valueRetriever = $this->valueRetriever($keyBy);
             $key = $valueRetriever($item);
             if ($dictionary->has($key)) {
                 $dictionary[$key]->fuse($item, $except);
             } else {
+                $dictionary[$key] = $item;
+            }
+        }
+
+        return $dictionary->values();
+    }
+
+    /**
+     * Add new items to the collection, ignoring items with duplicate key.
+     *
+     * @param DataCollection $items
+     * @param $keyBy
+     * @return static
+     */
+    public function unionBy(DataCollection $items, $keyBy)
+    {
+        $dictionary = $this->keyBy($keyBy);
+
+        foreach ($items as $item) {
+            $valueRetriever = $this->valueRetriever($keyBy);
+            $key = $valueRetriever($item);
+            if (! $dictionary->has($key)) {
                 $dictionary[$key] = $item;
             }
         }

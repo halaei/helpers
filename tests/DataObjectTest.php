@@ -137,6 +137,54 @@ class DataObjectTest extends \PHPUnit_Framework_TestCase
             ]
         ], $fused->toArray());
     }
+
+    public function test_union_by()
+    {
+        $users1 = new DataCollection([
+            new User([
+                'id' => 1,
+                'name' => 'Foo',
+            ]),
+            new User([
+                'id' => 2,
+                'name' => 'Bar',
+            ]),
+            new User([
+                'id' => 3,
+                'name' => 'Baz',
+            ]),
+        ]);
+        $users2 = new DataCollection([
+            new User([
+                'id' => 1,
+                'name' => 'Foobar',
+            ]),
+            new User([
+                'id' => 4,
+                'name' => 'FooBarBaz',
+            ]),
+        ]);
+        $all = $users1->unionBy($users2, 'id');
+        $this->assertSame([
+            [
+                'id' => 1,
+                'name' => 'Foo',
+            ],
+            [
+                'id' => 2,
+                'name' => 'Bar',
+            ],
+            [
+                'id' => 3,
+                'name' => 'Baz',
+            ],
+            [
+                'id' => 4,
+                'name' => 'FooBarBaz',
+            ],
+        ], $all->toArray());
+
+    }
 }
 
 /**

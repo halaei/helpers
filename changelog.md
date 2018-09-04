@@ -1,5 +1,10 @@
 # Change Log
 
+#v0.4.5
+
+- New feature: Random worker terminator.
+- New feature: DataCollection::unionBy().
+
 #v0.4.2
 
 - New feature: DataObject.
