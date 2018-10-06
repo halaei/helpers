@@ -5,6 +5,10 @@
 - New feature: Random worker terminator.
 - New feature: DataCollection::unionBy().
 
+#v0.4.4
+
+- New feature: fusing DataObjects and DataCollections.
+
 #v0.4.2
 
 - New feature: DataObject.
