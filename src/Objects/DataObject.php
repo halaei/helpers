@@ -50,7 +50,7 @@ abstract class DataObject implements Arrayable, Jsonable, Rawable
     protected function mapRelations()
     {
         foreach (static::relations() as $property => $type) {
-            if (array_key_exists($property, $this->data) && ! is_null($this->data[$property])) {
+            if (isset($this->data[$property])) {
                 $this->data[$property] = Casting::cast($this->data[$property], $type, $property);
             }
         }
@@ -176,7 +176,7 @@ abstract class DataObject implements Arrayable, Jsonable, Rawable
      */
     public function __get($key)
     {
-        if (array_key_exists($key, $this->data)) {
+        if (isset($this->data[$key])) {
             return $this->data[$key];
         }
 
