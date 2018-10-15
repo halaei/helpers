@@ -176,7 +176,7 @@ abstract class DataObject implements Arrayable, Jsonable, Rawable
      */
     public function __get($key)
     {
-        if (iseet($this->data[$key])) {
+        if (isset($this->data[$key])) {
             return $this->data[$key];
         }
 
