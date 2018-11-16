@@ -67,7 +67,7 @@ class Order extends DataObject
         return [
             'items' => [Item::class], // items is a collection of objects of type Item.
             'destination' => Location::class, //delivered_to is an object of type Location
-            'customer_mobile' => [Mobile::class, 'decode'], // customer mobile is an string that can be casted to a Mobile object via 'decode' static function.
+            'customer_mobile' => [Mobile::class, 'decode'], // customer mobile is a string that can be casted to a Mobile object via 'decode' static function.
         ];
     }
 }
@@ -133,6 +133,22 @@ echo get_class($order->delivered_to); // Location
 echo $order->items[0]->quantity;// 5
 var_dump($order->toArray()['mobile_number']); // ['code' => '+98', 'number' => '9131231212']
 var_dump($order->toRaw()['mobile_number']); // +98-9131231212
+```
+#### Cast model attributes to data objects and collections
+To cast model attributes to objects, use `HasCastables` trait and define the casts via `static $castables` like the way
+relations are defined in `DataObject` classes. This trait is designed for document-oriented databases like mongodb -
+works great with `jenssegers/laravel-mongodb` package. To work with SQL databases, `$casts` attributes should also be
+used to handle json encoding/decoding.
+
+```php
+class Order extends DataObject
+{
+    protected static $castables = [
+        'items' => [Item::class],
+        'destination' => Location::class,
+        'customer_mobile' => [Mobile::class, 'decode'],
+    ];
+}
 ```
 
 ### Eloquent Cache

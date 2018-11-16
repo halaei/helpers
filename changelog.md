@@ -1,5 +1,8 @@
 # Change Log
 
+#v0.4.6
+- New feature: HasCastables trait.
+
 #v0.4.5
 
 - New feature: Random worker terminator.
