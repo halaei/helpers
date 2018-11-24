@@ -46,6 +46,32 @@ class GetTelegramUpdates
 
 To configure the behaviour of supervisor, you can pass an instance of `Halaei\Helpers\Supervisor\SupervisorOptions` as the second argument to the `supervise()` method.
 
+#### Graceful QuitsOnSignals trait.
+To gracefully terminate a command on receiving signals, use `QuitsOnSignals` trait as shown in this example:
+
+```php
+use Halaei\Helpers\Supervisor\QuitsOnSignals;
+
+class SomeCommand
+{
+    use QuitsOnSignals;
+
+    public function handle()
+    {
+        $this->listenToSignals();
+        try {
+            while(someConditionHolds()) {
+                $this->process(); // a process that must be atomic (it shouldn't abort in the middle).
+                $this->quitIfSignaled();
+            }
+        } finally {
+            //Optional. Required if this process has other stuff to do after handle().
+            $this->stopListeningToSignals();
+        }
+    }
+}
+```
+
 ### Data Object
 An instance of `DataObject` is an object-oriented representation of a key-value array.
 The constructor of a data object accepts a key-value array and convert its items into types that are defined in the class `relations()` method.

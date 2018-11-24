@@ -1,5 +1,8 @@
 # Change Log
 
+#v0.4.7
+- New feature: QuitsOnSignals trait.
+
 #v0.4.6
 - New feature: HasCastables trait.
 
