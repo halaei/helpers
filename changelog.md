@@ -1,5 +1,8 @@
 # Change Log
 
+#v0.5.0
+- Laravel 5.8 compatibility
+
 #v0.4.7
 - New feature: QuitsOnSignals trait.
 

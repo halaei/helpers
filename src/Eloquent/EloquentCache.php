@@ -2,6 +2,7 @@
 
 namespace Halaei\Helpers\Eloquent;
 
+use Carbon\Carbon;
 use Illuminate\Cache\Repository;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -111,7 +112,7 @@ class EloquentCache
         $model = $this->model->newQuery()->where('id', '=', $id)->firstOrFail();
 
         if ($useCache) {
-            $this->cache->put($key, $model->getOriginal(), $this->minutesToCache);
+            $this->cache->put($key, $model->getOriginal(), $this->cacheDuration());
         }
 
         return $model;
@@ -140,7 +141,7 @@ class EloquentCache
             $this->cache->putMany([
                 $secondaryKey => $model->getKey(),
                 $this->getPrimaryCacheKey($model->getKey()) => $model->getOriginal(),
-            ], $this->minutesToCache);
+            ], $this->cacheDuration());
         } else {
             $model = $this->find($id);
         }
@@ -188,7 +189,7 @@ class EloquentCache
         if ($id instanceof Model) {
             $id = $id->getKey();
         }
-        $this->cache->put($this->getPrimaryCacheKey($id), 'invalid', $minutes ? : $this->minutesToCache);
+        $this->cache->put($this->getPrimaryCacheKey($id), 'invalid', $this->cacheDuration($minutes));
     }
 
     /**
@@ -202,5 +203,11 @@ class EloquentCache
             $id = $id->getKey();
         }
         $this->cache->forget($this->getPrimaryCacheKey($id));
+    }
+
+    protected function cacheDuration($minutes = null)
+    {
+        $minutes = $minutes ?? $this->minutesToCache;
+        return Carbon::now()->addSeconds((int) 60 * $minutes);
     }
 }

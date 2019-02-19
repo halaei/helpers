@@ -2,6 +2,7 @@
 
 namespace HalaeiTests;
 
+use Carbon\Carbon;
 use Halaei\Helpers\Eloquent\Cacheable;
 use Halaei\Helpers\Eloquent\CacheableTrait;
 use Halaei\Helpers\Eloquent\EloquentCache;
@@ -34,12 +35,14 @@ class EloquentCacheTest extends \PHPUnit_Framework_TestCase
         $this->model = Mockery::mock(CachedModel::class);
         $this->cacheable = Mockery::mock(CacheableModel::class);
         $this->cache = Mockery::mock(Repository::class);
+        Carbon::setTestNow(Carbon::now());
     }
 
     protected function tearDown()
     {
         Mockery::close();
         parent::tearDown();
+        Carbon::setTestNow();
     }
 
     public function test_find_from_cache()
@@ -60,7 +63,10 @@ class EloquentCacheTest extends \PHPUnit_Framework_TestCase
         $this->cacheable->shouldReceive('where')->once()->with('id', '=', 2)->andReturnSelf();
         $this->cacheable->shouldReceive('firstOrFail')->once()->andReturnSelf();
         $this->cacheable->shouldReceive('getOriginal')->once()->andReturn(['id' => 2, 'column' => 'value']);
-        $this->cache->shouldReceive('put')->once()->with('elq-ch:cacheable_models:2', ['id' => 2, 'column' => 'value'], 10);
+        $this->cache->shouldReceive('put')->once()
+            ->with('elq-ch:cacheable_models:2', ['id' => 2, 'column' => 'value'], Mockery::on(function (Carbon $time) {
+                return Carbon::now()->timestamp + 600 === $time->timestamp;
+            }));
         $result = $repository->find(2);
         $this->assertSame($this->cacheable, $result);
     }
@@ -96,7 +102,10 @@ class EloquentCacheTest extends \PHPUnit_Framework_TestCase
         $this->model->shouldReceive('where')->once()->with('id', '=', 3)->andReturnSelf();
         $this->model->shouldReceive('firstOrFail')->once()->andReturnSelf();
         $this->model->shouldReceive('getOriginal')->once()->andReturn(['id' => 3, 'column' => 'value']);
-        $this->cache->shouldReceive('put')->once()->with('elq-ch:cached_models:3', ['id' => 3, 'column' => 'value'], 10);
+        $this->cache->shouldReceive('put')->once()
+            ->with('elq-ch:cached_models:3', ['id' => 3, 'column' => 'value'], Mockery::on(function (Carbon $time) {
+                return Carbon::now()->timestamp + 600 === $time->timestamp;
+            }));
 
         $this->assertSame($this->model, $repository->findBySecondaryKey(['column1' => 'value1', 'column2' => 'value2']));
     }
@@ -114,7 +123,9 @@ class EloquentCacheTest extends \PHPUnit_Framework_TestCase
         $this->cache->shouldReceive('putMany')->once()->with([
             'elq-ch:cached_models:3' => ['id' => 3, 'column1' => 'value1', 'column2' => 'value2'],
             'elq-ch:cached_models:s:column1,column2:value1,value2' => 3,
-        ], 10);
+        ], Mockery::on(function (Carbon $time) {
+            return Carbon::now()->timestamp + 600 === $time->timestamp;
+        }));
 
         $this->assertSame($this->model, $repository->findBySecondaryKey(['column1' => 'value1', 'column2' => 'value2']));
     }
@@ -133,7 +144,10 @@ class EloquentCacheTest extends \PHPUnit_Framework_TestCase
         $model = Mockery::mock(CachedModel::class);
         $model->shouldReceive('isDirty')->once()->andReturn(true);
         $model->shouldReceive('getKey')->twice()->andReturn(3);
-        $this->cache->shouldReceive('put')->once()->with('elq-ch:cached_models:3', 'invalid', 10);
+        $this->cache->shouldReceive('put')->once()
+            ->with('elq-ch:cached_models:3', 'invalid', Mockery::on(function (Carbon $time) {
+            return Carbon::now()->timestamp + 600 === $time->timestamp;
+        }));
         $model->shouldReceive('save')->once();
         $this->cache->shouldReceive('forget')->once()->with('elq-ch:cached_models:3');
         $repository->update($model);
@@ -144,7 +158,10 @@ class EloquentCacheTest extends \PHPUnit_Framework_TestCase
         $repository = new EloquentCache($this->model, $this->cache, 'cached_models');
         $model = Mockery::mock(CachedModel::class);
         $model->shouldReceive('getKey')->once()->andReturn(3);
-        $this->cache->shouldReceive('put')->once()->with('elq-ch:cached_models:3', 'invalid', 10);
+        $this->cache->shouldReceive('put')->once()
+            ->with('elq-ch:cached_models:3', 'invalid', Mockery::on(function (Carbon $time) {
+                return Carbon::now()->timestamp + 600 === $time->timestamp;
+            }));
         $this->model->shouldReceive('newQuery')->andReturnSelf();
         $this->model->shouldReceive('getKeyName')->once()->andReturn('id');
         $this->model->shouldReceive('where')->once()->with('id', '=', 3)->andReturnSelf();
@@ -155,7 +172,10 @@ class EloquentCacheTest extends \PHPUnit_Framework_TestCase
     public function test_invalidate()
     {
         $repository = new EloquentCache($this->model, $this->cache, 'cached_models');
-        $this->cache->shouldReceive('put')->once()->with('elq-ch:cached_models:4', 'invalid', 10);
+        $this->cache->shouldReceive('put')->once()
+            ->with('elq-ch:cached_models:4', 'invalid', Mockery::on(function (Carbon $time) {
+                return Carbon::now()->timestamp + 600 === $time->timestamp;
+            }));
         $repository->invalidateCache(4);
     }
 
