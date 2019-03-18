@@ -26,14 +26,23 @@ class SupervisorOptions
     public $force;
 
     /**
+     * Whether to stop on error.
+     *
+     * @var bool
+     */
+    public $stopOnError;
+
+    /**
      * @param int $timeout
      * @param int|float $memory
      * @param bool $force
+     * @param bool $stopOnError
      */
-    public function __construct($timeout = 60, $memory = 128, $force = false)
+    public function __construct($timeout = 60, $memory = 128, $force = false, $stopOnError = false)
     {
         $this->timeout = $timeout;
         $this->memory = $memory;
         $this->force = $force;
+        $this->stopOnError = $stopOnError;
     }
 }

@@ -2,6 +2,8 @@
 
 #v0.5.0
 - Laravel 5.8 compatibility
+- Supervisor can optionally stop on error.
+- Supervisor sleeps one second on error to make it CPU friendly.
 
 #v0.4.7
 - New feature: QuitsOnSignals trait.

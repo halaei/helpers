@@ -108,11 +108,19 @@ class Supervisor
             $closure();
             $this->events->dispatch(new RunSucceed($options, $state));
         } catch (\Exception $e) {
+            if ($options->stopOnError) {
+                $state->shouldQuit = true;
+            }
             $this->exceptions->report($e);
             $this->events->dispatch(new RunFailed($options, $state, $e));
+            sleep(1);
         } catch (\Throwable $e) {
+            if ($options->stopOnError) {
+                $state->shouldQuit = true;
+            }
             $this->exceptions->report(new FatalThrowableError($e));
             $this->events->dispatch(new RunFailed($options, $state, $e));
+            sleep(1);
         }
     }
 
