@@ -2,6 +2,8 @@
 
 namespace Halaei\Helpers\Redis;
 
+use Illuminate\Contracts\Cache\LockTimeoutException;
+use Illuminate\Redis\RedisManager;
 use Predis\ClientInterface;
 
 class Lock
@@ -14,6 +16,11 @@ class Lock
     public function __construct(ClientInterface $redis)
     {
         $this->redis = $redis;
+    }
+
+    public static function instance($connection = null)
+    {
+        return new static(app(RedisManager::class)->connection($connection)->client());
     }
 
     /**
@@ -60,5 +67,31 @@ if (redis.call('rpoplpush', KEYS[1], KEYS[2])) then
 end
 LUA;
         $this->redis->eval($LUA, 2, $name.'1', $name.'2');
+    }
+
+    /**
+     * Run a callback after acquiring a lock, or fail if lock can't be acquired.
+     *
+     * @param  string $name         The name of the lock.
+     * @param  callable $callback   The callback to run.
+     * @param  int|float $tr        Auto-release time in seconds.
+     * @param  int $retries         The number of retries for acquiring the lock.
+     *
+     * @return mixed                The callback return value
+     *
+     * @throws LockTimeoutException On failure to acquire the lock.
+     */
+    public function block($name, $callback, $tr = 2, $retries = 2)
+    {
+        for ($i = 0; $i < $retries; $i++) {
+            if ($this->lock($name, $tr)) {
+                try {
+                    return $callback();
+                } finally {
+                    $this->unlock($name);
+                }
+            }
+        }
+        throw new LockTimeoutException();
     }
 }

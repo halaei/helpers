@@ -3,6 +3,7 @@
 namespace HalaeiTests;
 
 use Halaei\Helpers\Redis\Lock;
+use Illuminate\Contracts\Cache\LockTimeoutException;
 use Predis\Client;
 
 class RedisLockTest extends \PHPUnit_Framework_TestCase
@@ -67,6 +68,24 @@ class RedisLockTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(1, $this->redis->llen('test2'));
 
         $this->assertEquals(0, $this->redis->exists('test1'));
+    }
+
+    public function test_block()
+    {
+        $callback = function () {
+            return true;
+        };
+
+        $this->assertTrue($this->lock->block('test', $callback, 10, 1));
+        $this->assertTrue($this->lock->block('test', $callback));
+        $this->assertEquals(0, $this->redis->exists('test'));
+
+        $this->assertTrue($this->lock->lock('test', 3));
+        $this->assertTrue($this->lock->block('test', $callback, 1, 4));
+
+        $this->assertTrue($this->lock->lock('test', 100));
+        $this->expectException(LockTimeoutException::class);
+        $this->lock->block('test', $callback, 1, 3);
     }
 
     public function test_lock_twice_sequentially_and_unlock_when_it_is_late()

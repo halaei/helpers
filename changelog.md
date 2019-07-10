@@ -1,5 +1,8 @@
 # Change Log
 
+#v0.5.1
+- Helper methods for Redis Lock: block() and instance().
+
 #v0.5.0
 - Laravel 5.8 compatibility
 - Supervisor can optionally stop on error.
