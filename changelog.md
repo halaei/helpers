@@ -1,7 +1,7 @@
 # Change Log
 
 #v0.6.0
-- Laravel 6.0 support
+- Laravel 6 & 7 support
 - Drop PHP 7.0 support
 - Drop Laravel 5.6 support
 
