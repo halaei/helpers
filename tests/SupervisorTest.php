@@ -18,8 +18,9 @@ use Illuminate\Contracts\Events\Dispatcher as Events;
 use Illuminate\Contracts\Foundation\Application;
 use Mockery;
 use Mockery\MockInterface;
+use PHPUnit\Framework\TestCase;
 
-class SupervisorTest extends \PHPUnit_Framework_TestCase
+class SupervisorTest extends TestCase
 {
     /**
      * @var MockInterface|Application
@@ -51,7 +52,7 @@ class SupervisorTest extends \PHPUnit_Framework_TestCase
      */
     private $supervisor;
 
-    public function setUp()
+    public function setUp(): void
     {
         parent::setUp();
 
@@ -64,7 +65,7 @@ class SupervisorTest extends \PHPUnit_Framework_TestCase
         $this->supervisor = new SupervisorStub($this->laravel, $this->cache, $this->bus, $this->events, $this->exceptions);
     }
 
-    public function tearDown()
+    public function tearDown(): void
     {
         Mockery::close();
         pcntl_alarm(0);

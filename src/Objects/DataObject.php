@@ -4,6 +4,7 @@ namespace Halaei\Helpers\Objects;
 
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Contracts\Support\Jsonable;
+use Illuminate\Support\Str;
 
 abstract class DataObject implements Arrayable, Jsonable, Rawable
 {
@@ -157,11 +158,11 @@ abstract class DataObject implements Arrayable, Jsonable, Rawable
         $action = substr($method, 0, 3);
 
         if ($action === 'get') {
-            return $this->__get(snake_case(substr($method, 3)));
+            return $this->__get(Str::snake(substr($method, 3)));
         }
 
         if ($action === 'set' && count($parameters) == 1) {
-            return $this->__set(snake_case(substr($method, 3)), $parameters[0]);
+            return $this->__set(Str::snake(substr($method, 3)), $parameters[0]);
         }
 
         throw new \BadMethodCallException("Method {$method} does not exist.");

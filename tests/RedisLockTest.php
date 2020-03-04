@@ -4,9 +4,10 @@ namespace HalaeiTests;
 
 use Halaei\Helpers\Redis\Lock;
 use Illuminate\Contracts\Cache\LockTimeoutException;
+use PHPUnit\Framework\TestCase;
 use Predis\Client;
 
-class RedisLockTest extends \PHPUnit_Framework_TestCase
+class RedisLockTest extends TestCase
 {
     /**
      * @var Client
@@ -18,7 +19,7 @@ class RedisLockTest extends \PHPUnit_Framework_TestCase
      */
     private $lock;
 
-    public function setUp()
+    public function setUp(): void
     {
         parent::setUp();
 
@@ -29,7 +30,7 @@ class RedisLockTest extends \PHPUnit_Framework_TestCase
         $this->lock = new Lock($this->redis);
     }
 
-    public function tearDown()
+    public function tearDown(): void
     {
         $this->redis->flushdb();
 

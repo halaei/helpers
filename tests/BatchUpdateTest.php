@@ -3,8 +3,9 @@
 namespace HalaeiTests;
 
 use Halaei\Helpers\Eloquent\EloquentServiceProvider;
+use PHPUnit\Framework\TestCase;
 
-class BatchUpdateTest extends \PHPUnit_Framework_TestCase
+class BatchUpdateTest extends TestCase
 {
     /**
      * The Illuminate application instance.
@@ -13,7 +14,7 @@ class BatchUpdateTest extends \PHPUnit_Framework_TestCase
      */
     protected $app;
 
-    public function setUp()
+    public function setUp(): void
     {
         if (! $this->app) {
             $this->createApplication();

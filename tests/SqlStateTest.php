@@ -3,8 +3,9 @@
 namespace HalaeiTests;
 
 use Halaei\Helpers\Eloquent\SqlState;
+use PHPUnit\Framework\TestCase;
 
-class SqlStateTest extends \PHPUnit_Framework_TestCase
+class SqlStateTest extends TestCase
 {
     public function test_integrity_constraint_violation()
     {

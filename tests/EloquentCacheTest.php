@@ -11,8 +11,9 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Mockery;
 use Mockery\MockInterface;
+use PHPUnit\Framework\TestCase;
 
-class EloquentCacheTest extends \PHPUnit_Framework_TestCase
+class EloquentCacheTest extends TestCase
 {
     /**
      * @var MockInterface|CachedModel
@@ -29,7 +30,7 @@ class EloquentCacheTest extends \PHPUnit_Framework_TestCase
      */
     private $cache;
 
-    public function setUp()
+    public function setUp(): void
     {
         parent::setUp();
         $this->model = Mockery::mock(CachedModel::class);
@@ -38,8 +39,11 @@ class EloquentCacheTest extends \PHPUnit_Framework_TestCase
         Carbon::setTestNow(Carbon::now());
     }
 
-    protected function tearDown()
+    protected function tearDown(): void
     {
+        if ($container = Mockery::getContainer()) {
+            $this->addToAssertionCount($container->mockery_getExpectationCount());
+        }
         Mockery::close();
         parent::tearDown();
         Carbon::setTestNow();
@@ -71,9 +75,6 @@ class EloquentCacheTest extends \PHPUnit_Framework_TestCase
         $this->assertSame($this->cacheable, $result);
     }
 
-    /**
-     * @expectedException \Illuminate\Database\Eloquent\ModelNotFoundException
-     */
     public function test_fail_to_find()
     {
         $repository = new EloquentCache($this->cacheable, $this->cache, 'cacheable_models');
@@ -81,6 +82,7 @@ class EloquentCacheTest extends \PHPUnit_Framework_TestCase
         $this->cacheable->shouldReceive('newQuery')->once()->andReturnSelf();
         $this->cacheable->shouldReceive('where')->once()->with('id', '=', 2)->andReturnSelf();
         $this->cacheable->shouldReceive('firstOrFail')->andThrow(ModelNotFoundException::class);
+        $this->expectException(ModelNotFoundException::class);
         $repository->find(2);
     }
 

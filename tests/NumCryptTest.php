@@ -3,9 +3,9 @@
 namespace HalaeiTests;
 
 use Halaei\Helpers\Crypt\NumCrypt;
-use PHPUnit_Framework_TestCase;
+use PHPUnit\Framework\TestCase;
 
-class NumCryptTest extends PHPUnit_Framework_TestCase
+class NumCryptTest extends TestCase
 {
     public function test_some_values()
     {

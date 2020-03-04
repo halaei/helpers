@@ -3,8 +3,9 @@
 namespace HalaeiTests;
 
 use Halaei\Helpers\Objects\DataCollection;
+use PHPUnit\Framework\TestCase;
 
-class HasCastablesTest extends \PHPUnit_Framework_TestCase
+class HasCastablesTest extends TestCase
 {
     public function test_user_model()
     {

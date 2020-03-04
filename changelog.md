@@ -1,5 +1,10 @@
 # Change Log
 
+#v0.6.0
+- Laravel 6.0 support
+- Drop PHP 7.0 support
+- Drop Laravel 5.6 support
+
 #v0.5.0
 - Laravel 5.8 compatibility
 - Supervisor can optionally stop on error.

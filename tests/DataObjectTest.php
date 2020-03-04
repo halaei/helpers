@@ -3,8 +3,9 @@
 namespace HalaeiTests;
 
 use Halaei\Helpers\Objects\DataCollection;
+use PHPUnit\Framework\TestCase;
 
-class DataObjectTest extends \PHPUnit_Framework_TestCase
+class DataObjectTest extends TestCase
 {
     public function test_a_user_object()
     {
@@ -35,7 +36,7 @@ class DataObjectTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(1, $user->id);
         $this->assertNull($user->password);
         $this->assertInstanceOf(Mobile::class, $user->mobile);
-        $this->assertEquals(new Mobile(['code' => '+98', 'number' => '9131231212']), $user->getMobile());
+        $this->assertEquals(new Mobile(['code' => '98', 'number' => '9131231212']), $user->getMobile());
         $this->assertCount(2, $user->orders);
         $this->assertInstanceOf(Order::class, $user->orders[0]);
         $this->assertInstanceOf(Item::class, $user->orders[0]->items[0]);

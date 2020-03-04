@@ -11,7 +11,6 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $name
  * @property Mobile $mobile
  * @property Order[] $orders
- * @property
  */
 class User extends DataObject
 {
