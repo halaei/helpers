@@ -10,9 +10,9 @@
 This is a collection of miscellanous utilities gathered in one package for you:
 - Supervisor: safely run a piece of code in an infinite loop.
 - Data Objects: easily convert json decoded data from API calls and database models into objects with type hints, relations and you own logic. 
-- Eloquent Cache: a tiny cache repository for you eloquent models.
+- Eloquent Cache: a tiny cache repository for your eloquent models.
 - Redis lock: highly performant concurrency management with blocking atomic lock (without calling sleep()).
-- Process: A version of Symfony\Process with fewer features that doesn't fall into infinite loops!
+- Process: A version of Symfony\Process with fewer features that doesn't fall into [infinite loops](https://github.com/symfony/symfony/issues/21580)!
 - NumCrypt: obfuscate auto-incrementing integers.
 
 ### Supervisor
