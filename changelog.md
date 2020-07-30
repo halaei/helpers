@@ -1,5 +1,8 @@
 # Change Log
 
+#v0.6.1
+- New feature: Process.
+
 #v0.6.0
 - Laravel 6 & 7 support
 - Drop PHP 7.0 support

@@ -7,11 +7,16 @@
 [![License](https://poser.pugx.org/halaei/helpers/license)](https://packagist.org/packages/halaei/helpers)
 
 ## About this Package
-This is a personal package of small pieces of codes that I have needed in one specific project once, and they may be needed in other projects later on, too.
-So this is a way for me to stop copy and paste.
+This is a collection of miscellanous utilities gathered in one package for you:
+- Supervisor: safely run a piece of code in an infinite loop.
+- Data Objects: easily convert json decoded data from API calls and database models into objects with type hints, relations and you own logic. 
+- Eloquent Cache: a tiny cache repository for you eloquent models.
+- Redis lock: highly performant concurrency management with blocking atomic lock (without calling sleep()).
+- Process: A version of Symfony\Process with fewer features that doesn't fall into infinite loops!
+- NumCrypt: obfuscate auto-incrementing integers.
 
 ### Supervisor
-Supervisor helps you with running a command in an loop, enabling you to monitor and control it.
+Supervisor helps you with running a command in an infinite loop, enabling you to monitor and control it.
 Supervisor is a generalization of the laravel daemon queue implementation.
 - Supervisor prevents the command from consuming too much memory, getting frozen or taking too long.
 - Supervisor gracefully stops the loop of executing the given command if:
@@ -225,7 +230,7 @@ WHERE id in (12, 13, 16)
 
 To enable batch update feature (+ insert ignore) register `\Halaei\Helpers\Eloquent\EloquentServiceProvider::class` in the list of providers in `config/app.php`.
 
-### Redis-Based mutual exclusive lock
+### Redis-Based blocking mutual exclusive lock
 The `\Halaei\Helpers\Redis\Lock` class provides Redis-Based mutual exclusive locks with auto-release timer. The implementation is based on `rpoplpush` and `brpoplpush` Redis commands.
 
 A process that requires a lock should call the `lock($name, $tr = 2)` method in a loop until it returns true;
@@ -250,6 +255,39 @@ while (! $lock->lock('critical_section', 0.1) {}
 // 3. Release the lock
 $lock->unlock('critical_section', 0.1);
 ```
+
+### Process
+The `Halaei\Helpers\Process\Process` class is a simplified version of Symfony\Process that fixes
+[an infinite loop issue](https://github.com/symfony/symfony/issues/21580).
+(Note: It wasn't easy for me to deliver my fix to Symfony and guarantee it won't break something else, so I fix the issue in this package.)
+To summarize the bug, if the process doesn't read all the input, Symfony\Process might fall into an infinite loop and
+never find out that the process is not running anymore.
+
+Currently, `Halaei\Helpers\Process` doesn't have all the features of `Symfony\Process`. So in case you don't pass a large input to your process,
+or you are sure your process never terminates without reading the whole input, and if you want features like reading the process output while the
+process is running, feel safe to use `Symfony\Process` instead.
+
+You can create an instance of `Halaei\Helpers\Process` just like the way you create `Symfony\Process\Process`.
+To run a process, you may call `$process->run()` which always return an instance of `Halaei\Helpers\Process\ProcessResult`
+after the process exits, or call `$process->mustRun()` which only returns `ProcessResult` only if the process exits with zero,
+but in case of timeout or non-zero exit code or failure in starting the process it throws a `Halaei\Helpers\Process\ProcessException` exception.
+
+```php
+use Halaei\Helpers\Process\Process;
+use \Halaei\Helpers\Process\ProcessException;
+
+$input = "Some input string";
+$timout = 10; // seconds
+$p = new Process(['some', 'command', 'with', 'args'], null, null, $input, $timout);
+try {
+    dump($p->mustRun()->stdOut);
+} catch (ProcessException $e) {
+    dump ($e->getCode(), $e->result->stdErr, $e->result->stdOut, $e->result->exitCode);
+}
+```
+
+### Future plans
+Running concurrent processes (async).
 
 ### Clean-up DB transactions between handling queued jobs
 In order to make sure there is nothing wrong with the default DB connection even after a messed-up handling of a queued job,
@@ -276,7 +314,7 @@ echo $crypt->decrypt('53k7hx'); // 36
 ```
 
 The NumCrypt constructor accepts charset for the accepted characters in the output and a key for encryption (uxing XOR).
-By default the charset is `[a-z0-9]`, and the key is 308312529.
+By default, the charset is `[a-z0-9]`, and the key is 308312529.
 
 **Note**: NumCrypt is not meant to be cryptographically secure.
 
