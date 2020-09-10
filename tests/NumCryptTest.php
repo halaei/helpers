@@ -21,7 +21,7 @@ class NumCryptTest extends TestCase
         $crypt = new NumCrypt();
         for ($i = 0; $i < 100000; $i++) {
             $code = $crypt->encrypt($i);
-            $this->assertRegExp('/^[0-9a-z]{6}$/', $code);
+            $this->assertMatchesRegularExpression('/^[0-9a-z]{6}$/', $code);
             $this->assertSame($i, $crypt->decrypt($code));
         }
     }
@@ -39,7 +39,7 @@ class NumCryptTest extends TestCase
         $crypt = new NumCrypt('9876543210abcdef', 19);
         for ($i = 100000; $i < 120000; $i++) {
             $code = $crypt->encrypt($i);
-            $this->assertRegExp('/^[0-9a-f]{6}$/', $code);
+            $this->assertMatchesRegularExpression('/^[0-9a-f]{6}$/', $code);
             $this->assertSame($i, $crypt->decrypt($code));
         }
     }
