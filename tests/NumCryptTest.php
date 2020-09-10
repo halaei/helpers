@@ -43,4 +43,13 @@ class NumCryptTest extends TestCase
             $this->assertSame($i, $crypt->decrypt($code));
         }
     }
+
+    public static function assertMatchesRegularExpression(string $pattern, string $string, string $message = ''): void
+    {
+        if (method_exists(parent::class, 'assertMatchesRegularExpression')) {
+            parent::assertMatchesRegularExpression($pattern, $string, $message);
+        } else {
+            parent::assertRegExp($pattern, $string, $message);
+        }
+    }
 }
