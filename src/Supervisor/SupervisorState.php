@@ -22,4 +22,9 @@ class SupervisorState
      * @var int|null
      */
     public $lastRestart;
+
+    /**
+     * @var false|int
+     */
+    public $exitStatus = false;
 }

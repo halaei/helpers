@@ -33,16 +33,25 @@ class SupervisorOptions
     public $stopOnError;
 
     /**
+     * Prefer to return instead of calling exit() if possible.
+     *
+     * @var bool
+     */
+    public $dontDie;
+
+    /**
      * @param int $timeout
      * @param int|float $memory
      * @param bool $force
      * @param bool $stopOnError
+     * @param bool $dontDie
      */
-    public function __construct($timeout = 60, $memory = 128, $force = false, $stopOnError = false)
+    public function __construct($timeout = 60, $memory = 128, $force = false, $stopOnError = false, $dontDie = false)
     {
         $this->timeout = $timeout;
         $this->memory = $memory;
         $this->force = $force;
         $this->stopOnError = $stopOnError;
+        $this->dontDie = $dontDie;
     }
 }

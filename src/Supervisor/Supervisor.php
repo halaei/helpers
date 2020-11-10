@@ -13,7 +13,6 @@ use Illuminate\Contracts\Debug\ExceptionHandler;
 use Illuminate\Contracts\Events\Dispatcher as Events;
 use Illuminate\Contracts\Foundation\Application;
 use Closure;
-use Symfony\Component\Debug\Exception\FatalThrowableError;
 
 class Supervisor
 {
@@ -63,6 +62,7 @@ class Supervisor
      *
      * @param Closure|string|object $command
      * @param SupervisorOptions|null $options
+     * @return int
      */
     public function supervise($command, SupervisorOptions $options = null)
     {
@@ -92,6 +92,9 @@ class Supervisor
             // this process should restart based on other indications. If so, we'll stop
             // this process and let whatever is "monitoring" it restart the process.
             $this->stopIfNecessary($options, $state);
+            if ($state->exitStatus !== false) {
+                return $state->exitStatus;
+            }
         }
     }
 
@@ -107,18 +110,11 @@ class Supervisor
         try {
             $closure();
             $this->events->dispatch(new RunSucceed($options, $state));
-        } catch (\Exception $e) {
-            if ($options->stopOnError) {
-                $state->shouldQuit = true;
-            }
-            $this->exceptions->report($e);
-            $this->events->dispatch(new RunFailed($options, $state, $e));
-            sleep(1);
         } catch (\Throwable $e) {
             if ($options->stopOnError) {
                 $state->shouldQuit = true;
             }
-            $this->exceptions->report(new FatalThrowableError($e));
+            $this->exceptions->report($e);
             $this->events->dispatch(new RunFailed($options, $state, $e));
             sleep(1);
         }
@@ -261,10 +257,10 @@ class Supervisor
     protected function stopIfNecessary(SupervisorOptions $options, SupervisorState $state)
     {
         if ($this->memoryExceeded($options->memory)) {
-            $this->stop(12);
+            $this->stop(12, ! $options->dontDie, $state);
         } elseif ($state->shouldQuit || $this->shouldRestart($state->lastRestart) ||
             $this->events->until(new LoopCompleting($options, $state)) === false) {
-            $this->stop();
+            $this->stop(0, ! $options->dontDie, $state);
         }
     }
 
@@ -280,13 +276,19 @@ class Supervisor
      * Stop listening and bail out of the script.
      *
      * @param  int  $status
+     * @param  bool  $exit
+     * @param  SupervisorState  $state
      * @return void
      */
-    protected function stop($status = 0)
+    protected function stop($status, $exit, SupervisorState $state)
     {
+        $state->exitStatus = $status;
+
         $this->events->dispatch(new SupervisorStopping($status));
 
-        exit($status);
+        if ($exit) {
+            exit($status);
+        }
     }
 
     /**

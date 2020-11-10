@@ -1,5 +1,9 @@
 # Change Log
 
+#v0.7.0
+- Supervisor can return instead of exit using dontDie option.
+- Bugfix in handling Throwable errors.
+
 #v0.6.1
 - New feature: Process.
 
