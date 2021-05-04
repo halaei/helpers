@@ -114,7 +114,7 @@ class Supervisor
             if ($options->stopOnError) {
                 $state->shouldQuit = true;
             }
-            $this->exceptions->report($e);
+            report($e);
             $this->events->dispatch(new RunFailed($options, $state, $e));
             sleep(1);
         }

@@ -1,14 +1,20 @@
 language: php
 php:
-  - 7.1
-  - 7.2
-  - 7.3
   - 7.4
   - 8.0
+
+env:
+  - LARAVEL_VERSION=6.*
+  - LARAVEL_VERSION=8.*
 
 services:
   - redis-server
 
+before_install:
+  - composer require "illuminate/console:${LARAVEL_VERSION}" --no-update --prefer-dist
+  - composer require "illuminate/support:${LARAVEL_VERSION}" --no-update --prefer-dist
+  - composer require "illuminate/support:${LARAVEL_VERSION}" --no-update --prefer-dist
+  - composer require "illuminate/support:${LARAVEL_VERSION}" --no-update --prefer-dist
 install:
   - composer install --no-interaction --prefer-source
 script: vendor/bin/phpunit

@@ -1,5 +1,9 @@
 # Change Log
 
+#v0.8.0
+- Drop support for old PHP and Laravel versions.
+- Fix reporting throwable by calling `report()` helper function.
+
 #v0.7.0
 - Supervisor can return instead of exit using dontDie option.
 - Bugfix in handling Throwable errors.
