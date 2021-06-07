@@ -112,7 +112,7 @@ class EloquentCache
         $model = $this->model->newQuery()->where('id', '=', $id)->firstOrFail();
 
         if ($useCache) {
-            $this->cache->put($key, $model->getOriginal(), $this->cacheDuration());
+            $this->cache->put($key, $model->getRawOriginal(), $this->cacheDuration());
         }
 
         return $model;
@@ -140,7 +140,7 @@ class EloquentCache
             $model = $this->model->newQuery()->where($secondary)->firstOrFail();
             $this->cache->putMany([
                 $secondaryKey => $model->getKey(),
-                $this->getPrimaryCacheKey($model->getKey()) => $model->getOriginal(),
+                $this->getPrimaryCacheKey($model->getKey()) => $model->getRawOriginal(),
             ], $this->cacheDuration());
         } else {
             $model = $this->find($id);

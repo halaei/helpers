@@ -1,5 +1,9 @@
 # Change Log
 
+#v0.9
+- Minimum Laravel version: 8.
+- Fix getOriginal() for Laravel >= 7.
+
 #v0.8.0
 - Drop support for old PHP and Laravel versions.
 - Fix reporting throwable by calling `report()` helper function.

@@ -66,7 +66,7 @@ class EloquentCacheTest extends TestCase
         $this->cacheable->shouldReceive('newQuery')->once()->andReturnSelf();
         $this->cacheable->shouldReceive('where')->once()->with('id', '=', 2)->andReturnSelf();
         $this->cacheable->shouldReceive('firstOrFail')->once()->andReturnSelf();
-        $this->cacheable->shouldReceive('getOriginal')->once()->andReturn(['id' => 2, 'column' => 'value']);
+        $this->cacheable->shouldReceive('getRawOriginal')->once()->andReturn(['id' => 2, 'column' => 'value']);
         $this->cache->shouldReceive('put')->once()
             ->with('elq-ch:cacheable_models:2', ['id' => 2, 'column' => 'value'], Mockery::on(function (Carbon $time) {
                 return Carbon::now()->timestamp + 600 === $time->timestamp;
@@ -103,7 +103,7 @@ class EloquentCacheTest extends TestCase
         $this->model->shouldReceive('newQuery')->once()->andReturnSelf();
         $this->model->shouldReceive('where')->once()->with('id', '=', 3)->andReturnSelf();
         $this->model->shouldReceive('firstOrFail')->once()->andReturnSelf();
-        $this->model->shouldReceive('getOriginal')->once()->andReturn(['id' => 3, 'column' => 'value']);
+        $this->model->shouldReceive('getRawOriginal')->once()->andReturn(['id' => 3, 'column' => 'value']);
         $this->cache->shouldReceive('put')->once()
             ->with('elq-ch:cached_models:3', ['id' => 3, 'column' => 'value'], Mockery::on(function (Carbon $time) {
                 return Carbon::now()->timestamp + 600 === $time->timestamp;
@@ -121,7 +121,7 @@ class EloquentCacheTest extends TestCase
         $this->model->shouldReceive('where')->once()->with(['column1' => 'value1', 'column2' => 'value2'])->andReturnSelf();
         $this->model->shouldReceive('firstOrFail')->once()->andReturnSelf();
         $this->model->shouldReceive('getKey')->twice()->andReturn(3);
-        $this->model->shouldReceive('getOriginal')->once()->andReturn(['id' => 3, 'column1' => 'value1', 'column2' => 'value2']);
+        $this->model->shouldReceive('getRawOriginal')->once()->andReturn(['id' => 3, 'column1' => 'value1', 'column2' => 'value2']);
         $this->cache->shouldReceive('putMany')->once()->with([
             'elq-ch:cached_models:3' => ['id' => 3, 'column1' => 'value1', 'column2' => 'value2'],
             'elq-ch:cached_models:s:column1,column2:value1,value2' => 3,
