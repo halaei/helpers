@@ -1,5 +1,8 @@
 # Change Log
 
+#v0.9.1
+- Artisan command 'db:slow-log-queries'.
+
 #v0.9
 - Minimum Laravel version: 8.
 - Fix getOriginal() for Laravel >= 7.
