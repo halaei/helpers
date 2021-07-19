@@ -12,7 +12,7 @@ class LogSlowQueries extends Command
      *
      * @var string
      */
-    protected $signature = 'db:slow-log-queries {--connection=} {--sleep=2} {--once}';
+    protected $signature = 'db:log-slow-queries {--connection=} {--sleep=2} {--once}';
 
     /**
      * The console command description.
