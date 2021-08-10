@@ -1,6 +1,6 @@
 <?php
 
-namespace Halaei\Helpers\Eloquent;
+namespace Halaei\Helpers\Eloquent\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;

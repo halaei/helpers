@@ -2,6 +2,8 @@
 
 #v0.9.1
 - Artisan command 'db:log-slow-queries'.
+- Artisan command 'db:backup-table'.
+- Artisan command 'db:restore-dump'.
 
 #v0.9
 - Minimum Laravel version: 8.
