@@ -222,7 +222,7 @@ class Process
      * Concurrently run an array of processes.
      *
      * @param static[] $processes
-     * @return
+     * @return ProcessResult[]
      */
     public static function runAll(array $processes)
     {
@@ -261,10 +261,15 @@ class Process
                     preg_match('/(.*)_(1|2)$/', $pipeIndex, $matches);
                     $process = $running[$matches[1]];
                     $pipeId = $matches[2];
+                    $pipe = $process->pipes[$pipeId];
                     try {
-                        $read = fread($process->pipes[$pipeId], 16384);
+                        $read = fread($pipe, 16384);
                         if ($read !== false && strlen($read)) {
-                            $process->result->stdOut .= $read;
+                            if ($pipeId == 1) {
+                                $process->result->stdOut .= $read;
+                            } else {
+                                $process->result->stdErr .= $read;
+                            }
                         }
                     } catch (\Exception $e) {
                         // Ignore broken pipes.
@@ -295,9 +300,6 @@ class Process
             }
             if (! $process->status['running']) {
                 $process->result->exitCode = $process->status['exitcode'];
-                $process->result->timedOut = false;
-            } else {
-                $process->result->timedOut = true;
             }
             try {
                 stream_set_blocking($process->pipes[1], true);
@@ -380,6 +382,7 @@ class Process
     {
         $running = [];
         foreach ($processes as $index => $process) {
+            $process->result->timedOut = true;
             $hasBeenSignaled = $process->timedOutAt;
             if (! $hasBeenSignaled) {
                 $process->timedOutAt = microtime(true);
