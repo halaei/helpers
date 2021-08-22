@@ -63,6 +63,20 @@ class Process
     protected $result;
 
     /**
+     * Whether the input is closed by the process.
+     *
+     * @var boolean
+     */
+    protected $inputClosed;
+
+    /**
+     * The time at which the process timed out.
+     *
+     * @var float|null
+     */
+    protected $timedOutAt;
+
+    /**
      * Microseconds to sleep.
      *
      * @var int
@@ -111,33 +125,19 @@ class Process
      */
     public function run()
     {
-        $descriptors = [
-            ['pipe', 'r'],
-            ['pipe', 'w'],
-            ['pipe', 'w'],
-        ];
-        $this->startedAt = microtime(true);
-        // 'exec' is used to make sure the process is the immediate child, otherwise it will be the child of a child sh process.
-        $this->process = proc_open('exec '.$this->getCommandLine(), $descriptors, $this->pipes, $this->cwd, $this->env);
-        if (! is_resource($this->process)) {
+        if (! $this->open()) {
             return null;
         }
-        $this->result = new ProcessResult();
-        foreach ($this->pipes as $pipe) {
-            stream_set_blocking($pipe, false);
-        }
-
-        $inputClosed = false;
         for ($this->status = proc_get_status($this->process); $this->status['running'] && ! $this->result->timedOut; $this->status = proc_get_status($this->process)) {
-            $ready = $this->wait($inputClosed);
+            $ready = $this->wait();
             try {
-                if (! $inputClosed && isset($ready[1][0])) {
+                if (! $this->inputClosed && isset($ready[1][0])) {
                     if ($this->inputCursor < strlen($this->input)) {
                         $this->inputCursor += fwrite($this->pipes[0], substr($this->input, $this->inputCursor), strlen($this->input) - $this->inputCursor);
                     }
                     if ($this->inputCursor >= strlen($this->input)) {
                         fclose($this->pipes[0]);
-                        $inputClosed = true;
+                        $this->inputClosed = true;
                     }
                 }
                 if (isset($ready[0][0])) {
@@ -170,10 +170,11 @@ class Process
         try {
             stream_set_blocking($this->pipes[1], true);
             stream_set_blocking($this->pipes[2], true);
-            while ($read = fread($this->pipes[1], 16384)) {
+            // todo: use feof() to handle empty reads in the middle of streams
+            while (($read = fread($this->pipes[1], 16384)) !== false && strlen($read)) {
                 $this->result->stdOut .= $read;
             }
-            while ($read = fread($this->pipes[2], 16384)) {
+            while (($read = fread($this->pipes[2], 16384)) !== false && strlen($read)) {
                 $this->result->stdErr .= $read;
             }
         } catch (\Exception $e) {
@@ -191,7 +192,140 @@ class Process
     }
 
     /**
+     * Open the process
+     *
+     * @return boolean true on success.
+     */
+    protected function open()
+    {
+        $descriptors = [
+            ['pipe', 'r'],
+            ['pipe', 'w'],
+            ['pipe', 'w'],
+        ];
+        $this->startedAt = microtime(true);
+        // PHP 7.4 accepts array as command arguments and doesn't open process through shell.
+        $this->process = proc_open($this->command, $descriptors, $this->pipes, $this->cwd, $this->env);
+        if (! is_resource($this->process)) {
+            return false;
+        }
+        $this->result = new ProcessResult();
+        foreach ($this->pipes as $pipe) {
+            stream_set_blocking($pipe, false);
+        }
+
+        $this->inputClosed = false;
+        return true;
+    }
+
+    /**
+     * Concurrently run an array of processes.
+     *
+     * @param static[] $processes
+     * @return
+     */
+    public static function runAll(array $processes)
+    {
+        $results = [];
+        $running = [];
+        $timedout = [];
+        foreach ($processes as $index => $process) {
+            if ($process->open()) {
+                $running[$index] = $process;
+            } else {
+                $results[$index] = null;
+            }
+        }
+        while (count($running) || count($timedout)) {
+            // 1. Handle running processes
+            if (count($running)) {
+                $readyPipes = static::selectPipes($running);
+                // Write to STDIN
+                foreach ($readyPipes[1] as $pipeIndex => $isReady) {
+                    preg_match('/(.*)_0$/', $pipeIndex, $matches);
+                    $process = $running[$matches[1]];
+                    try {
+                        if ($process->inputCursor < strlen($process->input)) {
+                            $process->inputCursor += fwrite($process->pipes[0], substr($process->input, $process->inputCursor), strlen($process->input) - $process->inputCursor);
+                        }
+                        if ($process->inputCursor >= strlen($process->input)) {
+                            fclose($process->pipes[0]);
+                            $process->inputClosed = true;
+                        }
+                    } catch (\Exception $e) {
+                        // Ignore broken pipes.
+                    }
+                }
+                // Read from STDOUT and STDERR
+                foreach ($readyPipes[0] as $pipeIndex => $isReady) {
+                    preg_match('/(.*)_(1|2)$/', $pipeIndex, $matches);
+                    $process = $running[$matches[1]];
+                    $pipeId = $matches[2];
+                    try {
+                        $read = fread($process->pipes[$pipeId], 16384);
+                        if ($read !== false && strlen($read)) {
+                            $process->result->stdOut .= $read;
+                        }
+                    } catch (\Exception $e) {
+                        // Ignore broken pipes.
+                    }
+                }
+                // Check running status and timeouts
+                foreach ($running as $index => $process) {
+                    if (! $process->status['running']) {
+                        unset($running[$index]);
+                    } elseif ($process->startedAt + $process->timeout < microtime(true)) {
+                        $process->result->timedOut = true;
+                        $timedout[$index] = $process;
+                        unset($running[$index]);
+                    }
+                }
+            }
+            // 2. Handle timedout processes
+            $timedout = static::signalAll($timedout);
+            if (! count($running) && count($timedout)) {
+                usleep(1000);
+            }
+        }
+        // Read to the end of files in blocking mode
+        // Todo: check if it is possible/required to read the result of closed process in non-blocking mode.
+        foreach ($processes as $index => $process) {
+            if (array_key_exists($index, $results)) {
+                continue;
+            }
+            if (! $process->status['running']) {
+                $process->result->exitCode = $process->status['exitcode'];
+                $process->result->timedOut = false;
+            } else {
+                $process->result->timedOut = true;
+            }
+            try {
+                stream_set_blocking($process->pipes[1], true);
+                stream_set_blocking($process->pipes[2], true);
+                while (($read = fread($process->pipes[1], 16384)) !== false && strlen($read)) {
+                    $process->result->stdOut .= $read;
+                }
+                while (($read = fread($process->pipes[2], 16384)) !== false && strlen($read)) {
+                    $process->result->stdErr .= $read;
+                }
+            } catch (\Exception $e) {
+                $process->result->readError = $e;
+            }
+
+            foreach ($process->pipes as $key => $pipe) {
+                if (is_resource($pipe)) {
+                    fclose($pipe);
+                }
+            }
+            proc_close($process->process);
+            $results[$index] = $process->result;
+        }
+        return $results;
+    }
+
+    /**
      * Gets the command line to be executed.
+     * Note: This is used only in exception messages.
      *
      * @return string The command to execute
      */
@@ -236,17 +370,73 @@ class Process
         }
     }
 
-    protected function wait(bool $inputClosed)
+    /**
+     * Signal all the timed-out processes once.
+     *
+     * @param static[] $processes
+     * @return static[] return only running processes.
+     */
+    protected static function signalAll(array $processes)
+    {
+        $running = [];
+        foreach ($processes as $index => $process) {
+            $hasBeenSignaled = $process->timedOutAt;
+            if (! $hasBeenSignaled) {
+                $process->timedOutAt = microtime(true);
+            }
+            if (! $hasBeenSignaled || $process->timedOutAt + $process->waitForKill > microtime(true)) {
+                @posix_kill($process->status['pid'], SIGTERM);
+                $process->status = proc_get_status($process->process);
+                if ($process->status['running']) {
+                    $running[$index] = $process;
+                }
+            } else {
+                @posix_kill($process->status['pid'], SIGKILL);
+            }
+        }
+        return $running;
+    }
+
+    /**
+     * Wait for I/O to be available.
+     *
+     * @return array
+     * Returns an array that indicates which input/output pipes are ready for at least one byte of I/O.
+     */
+    protected function wait()
     {
         $read = [$this->pipes[1], $this->pipes[2]];
-        $write = $inputClosed ? [] : [$this->pipes[0]];
+        $write = $this->inputClosed ? [] : [$this->pipes[0]];
         $except = [];
         try {
             stream_select($read, $write, $except, 1, 0);
-            return [$read, $write];
         } catch (\Exception $e) {
             usleep($this->usleep);
-            return $inputClosed ? [[true, true], []] : [[true, true], [true]];
         }
+        return [$read, $write];
+    }
+
+    /**
+     * @param static[] $processes
+     */
+    protected static function selectPipes(array $processes)
+    {
+        $read = [];
+        $write = [];
+        $except = [];
+        foreach ($processes as $index => $process) {
+            $process->status = proc_get_status($process->process);
+            $read[$index.'_1'] = $process->pipes[1];
+            $read[$index.'_2'] = $process->pipes[2];
+            if (! $process->inputClosed && $process->status['running']) {
+                $write[$index.'_0'] = $process->pipes[0];
+            }
+        }
+        try {
+            stream_select($read, $write, $except, 1, 0);
+        } catch (\Exception $e) {
+            usleep(1000);
+        }
+        return [$read, $write];
     }
 }
