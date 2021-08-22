@@ -78,6 +78,7 @@ class Process
 
     /**
      * Microseconds to sleep.
+     * @deprecated
      *
      * @var int
      */
@@ -125,70 +126,7 @@ class Process
      */
     public function run()
     {
-        if (! $this->open()) {
-            return null;
-        }
-        for ($this->status = proc_get_status($this->process); $this->status['running'] && ! $this->result->timedOut; $this->status = proc_get_status($this->process)) {
-            $ready = $this->wait();
-            try {
-                if (! $this->inputClosed && isset($ready[1][0])) {
-                    if ($this->inputCursor < strlen($this->input)) {
-                        $this->inputCursor += fwrite($this->pipes[0], substr($this->input, $this->inputCursor), strlen($this->input) - $this->inputCursor);
-                    }
-                    if ($this->inputCursor >= strlen($this->input)) {
-                        fclose($this->pipes[0]);
-                        $this->inputClosed = true;
-                    }
-                }
-                if (isset($ready[0][0])) {
-                    $read = fread($this->pipes[1], 16384);
-                    if ($read !== false && strlen($read)) {
-                        $this->result->stdOut .= $read;
-                    }
-                }
-                if (isset($ready[0][1])) {
-                    $read = fread($this->pipes[2], 16384);
-                    if ($read !== false && strlen($read)) {
-                        $this->result->stdErr .= $read;
-                    }
-                }
-            } catch (\Exception $e) {
-                // Ignore broken pipe
-            }
-            if ($this->startedAt + $this->timeout < microtime(true)) {
-                $this->result->timedOut = true;
-            }
-        }
-
-        if (! $this->status['running']) {
-            $this->result->exitCode = $this->status['exitcode'];
-            $this->result->timedOut = false;
-        } else {
-            $this->kill();
-        }
-
-        try {
-            stream_set_blocking($this->pipes[1], true);
-            stream_set_blocking($this->pipes[2], true);
-            // todo: use feof() to handle empty reads in the middle of streams
-            while (($read = fread($this->pipes[1], 16384)) !== false && strlen($read)) {
-                $this->result->stdOut .= $read;
-            }
-            while (($read = fread($this->pipes[2], 16384)) !== false && strlen($read)) {
-                $this->result->stdErr .= $read;
-            }
-        } catch (\Exception $e) {
-            $this->result->readError = $e;
-        }
-
-        foreach ($this->pipes as $key => $pipe) {
-            if (is_resource($pipe)) {
-                fclose($pipe);
-            }
-        }
-        proc_close($this->process);
-
-        return $this->result;
+        return static::runAll([$this])[0];
     }
 
     /**
@@ -358,20 +296,6 @@ class Process
         return '"'.str_replace(['"', '^', '%', '!', "\n"], ['""', '"^^"', '"^%"', '"^!"', '!LF!'], $argument).'"';
     }
 
-    protected function kill()
-    {
-        $time = microtime(true);
-        do {
-            @posix_kill($this->status['pid'], SIGTERM);
-            usleep($this->usleep);
-            $this->status = proc_get_status($this->process);
-        } while($this->status['running'] && $time + $this->waitForKill > microtime(true));
-
-        if ($this->status['running']) {
-            @posix_kill($this->status['pid'], SIGKILL);
-        }
-    }
-
     /**
      * Signal all the timed-out processes once.
      *
@@ -403,24 +327,9 @@ class Process
     /**
      * Wait for I/O to be available.
      *
+     * @param static[] $processes
      * @return array
      * Returns an array that indicates which input/output pipes are ready for at least one byte of I/O.
-     */
-    protected function wait()
-    {
-        $read = [$this->pipes[1], $this->pipes[2]];
-        $write = $this->inputClosed ? [] : [$this->pipes[0]];
-        $except = [];
-        try {
-            stream_select($read, $write, $except, 1, 0);
-        } catch (\Exception $e) {
-            usleep($this->usleep);
-        }
-        return [$read, $write];
-    }
-
-    /**
-     * @param static[] $processes
      */
     protected static function selectPipes(array $processes)
     {
