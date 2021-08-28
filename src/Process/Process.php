@@ -111,22 +111,9 @@ class Process
      */
     public function run()
     {
-        $descriptors = [
-            ['pipe', 'r'],
-            ['pipe', 'w'],
-            ['pipe', 'w'],
-        ];
-        $this->startedAt = microtime(true);
-        // 'exec' is used to make sure the process is the immediate child, otherwise it will be the child of a child sh process.
-        $this->process = proc_open('exec '.$this->getCommandLine(), $descriptors, $this->pipes, $this->cwd, $this->env);
-        if (! is_resource($this->process)) {
+        if (! $this->start()) {
             return null;
         }
-        $this->result = new ProcessResult();
-        foreach ($this->pipes as $pipe) {
-            stream_set_blocking($pipe, false);
-        }
-
         $inputClosed = false;
         for ($this->status = proc_get_status($this->process); $this->status['running'] && ! $this->result->timedOut; $this->status = proc_get_status($this->process)) {
             $ready = $this->wait($inputClosed);
@@ -170,10 +157,10 @@ class Process
         try {
             stream_set_blocking($this->pipes[1], true);
             stream_set_blocking($this->pipes[2], true);
-            while ($read = fread($this->pipes[1], 16384)) {
+            while (($read = fread($this->pipes[1], 16384)) !== false && strlen($read)) {
                 $this->result->stdOut .= $read;
             }
-            while ($read = fread($this->pipes[2], 16384)) {
+            while (($read = fread($this->pipes[2], 16384)) !== false && strlen($read)) {
                 $this->result->stdErr .= $read;
             }
         } catch (\Exception $e) {
@@ -188,6 +175,26 @@ class Process
         proc_close($this->process);
 
         return $this->result;
+    }
+
+    protected function start()
+    {
+        $descriptors = [
+            ['pipe', 'r'],
+            ['pipe', 'w'],
+            ['pipe', 'w'],
+        ];
+        $this->startedAt = microtime(true);
+        // 'exec' is used to make sure the process is the immediate child, otherwise it will be the child of a child sh process.
+        $this->process = proc_open('exec '.$this->getCommandLine(), $descriptors, $this->pipes, $this->cwd, $this->env);
+        if (! is_resource($this->process)) {
+            return false;
+        }
+        $this->result = new ProcessResult();
+        foreach ($this->pipes as $pipe) {
+            stream_set_blocking($pipe, false);
+        }
+        return true;
     }
 
     /**

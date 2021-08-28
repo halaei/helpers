@@ -60,4 +60,17 @@ class ProcessTest extends TestCase
         $this->assertTrue($p->run()->timedOut);
         $this->assertLessThan(5, microtime(true) - $t);
     }
+
+    public function test_reading_zero_after_process_ends()
+    {
+        $p = new class(['echo', '-n', '0']) extends Process {
+            protected function start()
+            {
+                $started = parent::start();
+                sleep(1);
+                return $started;
+            }
+        };
+        $this->assertSame('0', $p->run()->stdOut);
+    }
 }
