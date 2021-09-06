@@ -15,9 +15,15 @@ class ProcessException extends Exception
      */
     public $result;
 
-    public function setResult($result)
+    public function setResult(?ProcessResult $result)
     {
         $this->result = $result;
+        if ($result && $result->exitCode !== null) {
+            $this->message .= sprintf("\n\nOutput:\n================\n%s\n\nError Output:\n================\n%s",
+                substr($result->stdOut ?? '', 0, 2048),
+                substr($result->stdErr ?? '', 0, 2048)
+            );
+        }
 
         return $this;
     }

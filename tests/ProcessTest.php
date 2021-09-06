@@ -3,6 +3,7 @@
 namespace HalaeiTests;
 
 use Halaei\Helpers\Process\Process;
+use Halaei\Helpers\Process\ProcessException;
 use PHPUnit\Framework\TestCase;
 
 class ProcessTest extends TestCase
@@ -112,6 +113,23 @@ class ProcessTest extends TestCase
         $p = new Process(['sleep', '30'], null, null, null, 3);
         $this->assertTrue($p->run()->timedOut);
         $this->assertLessThan(5, microtime(true) - $t);
+    }
+
+    public function test_exit_code()
+    {
+        $error = false;
+        $p = new Process(['php', '-r', 'fwrite(STDERR, "Error output."); fwrite(STDOUT, "Standard output."); exit(1);']);
+        try {
+            $p->mustRun();
+        } catch (ProcessException $e) {
+            $error = true;
+            $this->assertEquals(1, $e->result->exitCode);
+            $this->assertEquals('Error output.', $e->result->stdErr);
+            $this->assertEquals('Standard output.', $e->result->stdOut);
+            $this->assertStringContainsString('Error output.', $e->getMessage());
+            $this->assertStringContainsString('Standard output.', $e->getMessage());
+        }
+        $this->assertTrue($error);
     }
 
     public function test_reading_zero_after_process_ends()
