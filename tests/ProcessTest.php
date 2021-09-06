@@ -126,4 +126,10 @@ class ProcessTest extends TestCase
         };
         $this->assertSame('0', $p->run()->stdOut);
     }
+
+    public function test_run_without_timeout()
+    {
+        $process = new Process(['echo', 'hello'], null, null, null, null);
+        $this->assertSame(0, $process->mustRun()->exitCode);
+    }
 }

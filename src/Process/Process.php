@@ -143,7 +143,7 @@ class Process
             } catch (\Exception $e) {
                 // Ignore broken pipe
             }
-            if ($this->startedAt + $this->timeout < microtime(true)) {
+            if (! is_null($this->timeout) && $this->startedAt + $this->timeout < microtime(true)) {
                 $this->result->timedOut = true;
             }
         }
