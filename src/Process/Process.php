@@ -23,7 +23,7 @@ class Process
     protected $env;
 
     /**
-     * @var string|null
+     * @var string|resource|null
      */
     protected $input;
 
@@ -31,6 +31,12 @@ class Process
      * @var int
      */
     protected $inputCursor = 0;
+
+    protected $inputBuffer;
+    /**
+     * @var bool
+     */
+    protected $inputClosed;
 
     /**
      * @var float|int|null
@@ -114,18 +120,13 @@ class Process
         if (! $this->start()) {
             return null;
         }
-        $inputClosed = false;
+        $this->inputClosed = false;
+        $this->inputBuffer = '';
         for ($this->status = proc_get_status($this->process); $this->status['running'] && ! $this->result->timedOut; $this->status = proc_get_status($this->process)) {
-            $ready = $this->wait($inputClosed);
+            $ready = $this->wait();
             try {
-                if (! $inputClosed && isset($ready[1][0])) {
-                    if ($this->inputCursor < strlen($this->input)) {
-                        $this->inputCursor += fwrite($this->pipes[0], substr($this->input, $this->inputCursor), strlen($this->input) - $this->inputCursor);
-                    }
-                    if ($this->inputCursor >= strlen($this->input)) {
-                        fclose($this->pipes[0]);
-                        $inputClosed = true;
-                    }
+                if (! $this->inputClosed && isset($ready[1][0])) {
+                    $this->write();
                 }
                 if (isset($ready[0][0])) {
                     $read = fread($this->pipes[1], 16384);
@@ -198,6 +199,39 @@ class Process
     }
 
     /**
+     * Write the next chunk of data to the process input.
+     */
+    protected function write()
+    {
+        if (is_resource($this->input)) {
+            // Read to the buffer and check for EOF
+            if ($this->inputCursor >= strlen($this->inputBuffer)) {
+                $data = fread($this->input, 128 * 1024);
+                if ($data !== false && strlen($data)) {
+                    $this->inputBuffer = $data;
+                    $this->inputCursor = 0;
+                } elseif (feof($this->input)) {
+                    fclose($this->pipes[0]);
+                    $this->inputClosed = true;
+                }
+            }
+            // Write from buffer to pipe
+            if ($this->inputCursor < strlen($this->inputBuffer)) {
+                $this->inputCursor += fwrite($this->pipes[0], substr($this->inputBuffer, $this->inputCursor), strlen($this->inputBuffer) - $this->inputCursor);
+            }
+            return;
+        }
+        // Read from string input
+        if ($this->inputCursor < strlen($this->input)) {
+            $this->inputCursor += fwrite($this->pipes[0], substr($this->input, $this->inputCursor), strlen($this->input) - $this->inputCursor);
+        }
+        if ($this->inputCursor >= strlen($this->input)) {
+            fclose($this->pipes[0]);
+            $this->inputClosed = true;
+        }
+    }
+
+    /**
      * Gets the command line to be executed.
      *
      * @return string The command to execute
@@ -243,17 +277,17 @@ class Process
         }
     }
 
-    protected function wait(bool $inputClosed)
+    protected function wait()
     {
         $read = [$this->pipes[1], $this->pipes[2]];
-        $write = $inputClosed ? [] : [$this->pipes[0]];
+        $write = $this->inputClosed ? [] : [$this->pipes[0]];
         $except = [];
         try {
             stream_select($read, $write, $except, 1, 0);
             return [$read, $write];
         } catch (\Exception $e) {
             usleep($this->usleep);
-            return $inputClosed ? [[true, true], []] : [[true, true], [true]];
+            return $this->inputClosed ? [[true, true], []] : [[true, true], [true]];
         }
     }
 }

@@ -2,13 +2,13 @@
 
 namespace Halaei\Helpers\Eloquent\Commands;
 
+use Halaei\Helpers\Process\Process;
 use Illuminate\Console\Command;
 use Illuminate\Database\Connection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use League\Flysystem\MountManager;
-use Symfony\Component\Process\Process;
 
 class RestoreDumpFromFileSystem extends Command
 {
@@ -17,7 +17,7 @@ class RestoreDumpFromFileSystem extends Command
      *
      * @var string
      */
-    protected $signature = 'db:restore-dump {database} {disk} {path} {--mysqlcli=mysql}';
+    protected $signature = 'db:restore-dump {database} {disk} {path} {--mysqlcli=mysql} {--force}';
 
     /**
      * The console command description.
@@ -57,7 +57,8 @@ class RestoreDumpFromFileSystem extends Command
 
     private function restore(string $dump)
     {
-        $process = new Process([
+        // https://dev.mysql.com/doc/refman/8.0/en/mysql-command-options.html
+        $command = [
             $this->option('mysqlcli'),
             '--host='.$this->connection()->getConfig('host'),
             '--password='.$this->connection()->getConfig('password'),
@@ -67,7 +68,11 @@ class RestoreDumpFromFileSystem extends Command
             '--compress', // Deprecated as of MySQL 8.0.18
             '--compression-algorithms=zlib,zstd,uncompressed',
             '--default-character-set='.$this->connection()->getConfig('charset'),
-        ], null, null, $file = fopen($dump, 'rb'), null);
+        ];
+        if ($this->option('force')) {
+            $command[] = '--force';
+        }
+        $process = new Process($command, null, null, $file = fopen($dump, 'rb'), null);
         $process->mustRun();
         fclose($file);
         unlink($dump);

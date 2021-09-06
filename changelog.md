@@ -1,9 +1,14 @@
 # Change Log
 
+#v1.0.0
+- Support resource as process input.
+- Improving db:restore-dump: --force option and switching to Halaei\Helpers\Process.
+
 #v0.9.1
 - Artisan command 'db:log-slow-queries'.
 - Artisan command 'db:backup-table'.
 - Artisan command 'db:restore-dump'.
+- Bug fixes in reading input from process.
 
 #v0.9
 - Minimum Laravel version: 8.
